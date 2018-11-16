@@ -8,14 +8,7 @@ var live_lib_user_engine = function (settings) {
     }
   }
 
-  global.LiveLib.getQueryMap = (query) => {
-    let params = query.split("&");
-    let map = new Map();
-    for (let i = 0; i < params.length; i++) {
-      map.set(params[i].split("=")[0], params[i].split("=")[1]);
-    }
-    return map;
-  }
+  global.LiveLib.db.createTable("users", {name: "id", type: "UNSIGNED INT", primary: true})
 
   global.LiveLib.userEngine.UserError = function (code, message) {
     this.name = "UserError";
@@ -42,9 +35,17 @@ var live_lib_user_engine = function (settings) {
     }
   }
 
+  global.LiveLib.userEngine.chechLogin = function (login) {
+
+  }
+
   global.LiveLib.userEngine.registerUser = function (login, password) {
+    //TODO: Check login
     global.LiveLib.userEngine.__createPasswordHash(password, (err, hash, salt) => {
-      if (err) global.LiveLib.getLogger().errorm("User Engine",)
+      if (err) global.LiveLib.getLogger().errorm("User Engine", "registerUser - ", err);
+      else {
+        //TODO: Write to DB
+      }
     });
   }
 
