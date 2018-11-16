@@ -1,12 +1,11 @@
 #LIVe lib
-##Modules
-* [Usage](#Usage)
-* [Base](#Base)
-* [Database](#Database)
-* [Permissions](#Permissions)
-* [Preference](#Preference)
-* [Net](#Net)
-* [User Engine](#User Engine)
+* Usage
+* [Base][#Base]
+* Database
+* Permissions
+* Preference
+* Net
+* User Engine
 ## Usage
 ####Initialization
 ```js
@@ -23,7 +22,8 @@ LiveLib.<Module name>.<Method>([args]);
 ...
 ```
 ## Base
-All modules using this module, because you may not write one in Initialization. This module change standard ```console.log()``` to ```Logger.log()```.
+All modules using this module, because you may not write one in Initialization. This module change standard ```console.log()``` to ```Logger.log()```  
+All methods and classes in this module use after ```LiveLib.```
 ###Methods
 * ```argsIndex(args (strings' array))``` - return the first index of the entry any string from array in process' argument
 * ```haveArgs(args (strings' array))``` - return true if process' arguments have any string of array
@@ -59,8 +59,8 @@ Class for set style in command line
 1. *doubleline* or *dline*
 1. *overline* or *oline*
 #####Colors
-1. <span style="color:black">black</span>
-1. <span style="color:red">red</span>
+1. black
+1. red
 1. green
 1. yellow
 1. blue
@@ -98,3 +98,37 @@ Class for logging information
 
 ## Database
 This module create for mysql database.
+###How to start
+```js
+require("live_lib")([["db", {
+  host: "host",
+  user: "user",
+  password: "pass"
+}]]);
+```
+You can set other settings
+* port
+* database
+* count_pools - how much connection will create in pool
+###or
+```js
+require("live_lib")("db");
+LiveLib.db.updateConnection("host","user", "pass");
+```
+###Methods
+* `updateConnection(host (string), user (string), password (string), port (number), database (string), count_pools (string))` - update or create connection to mysql. If database not exists, create one.
+* `createRequest(request, ...)` - send query to mysql. Arguments after first change "?" to one.
+* `changeDB(database, callback)` - change database.
+* `deleteDB(database, callback)` - drop database.
+* `createTable(table, ...)` - create table with name of first argument. In other argument you can use string or special object.
+    * **Special Object**
+        * `<name>` - string
+        * `<type>` - string
+        * `[default]` - string
+        * `[foreign]` - object
+            * `<table>` - string (from witch table get key)
+            * `<key>` - string  (what key)
+        * `[autoincrement]` - bool
+        * `[notnull]` - bool
+        * `[unique]` - bool
+        * `[primary]` - bool
