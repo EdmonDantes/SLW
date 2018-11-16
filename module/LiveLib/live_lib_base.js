@@ -164,7 +164,7 @@ var _live_lib_base = function () {
     global.LiveLib.object = function () {
     }
     global.LiveLib.object.prototype.toString = function () {
-      return "[Object]";
+      return "[LIVe Object]";
     }
     global.LiveLib.object.prototype.inspect = function () {
       return "LiveLib => object : " + this.toString();
@@ -564,10 +564,10 @@ var _live_lib_base = function () {
       if (this.isFatal()) return "fatal";
       else return "none";
     }
-    global.LiveLib.Logger.prototype.setLevel = function (str, e) {
+    global.LiveLib.Logger.prototype.setLevel = function (level, e) {
       try {
-        if (typeof str === "string" || str instanceof String) {
-          switch (str.toLowerCase()) {
+        if (typeof level === "string" || level instanceof String) {
+          switch (level.toLowerCase()) {
             case "trace":
               this.level = 1;
               break;
@@ -591,8 +591,8 @@ var _live_lib_base = function () {
               break;
           }
           return true;
-        } else if (typeof str === "number" || str instanceof Number) {
-          this.level = str;
+        } else if (typeof level === "number" || level instanceof Number) {
+          this.level = level;
           return true;
         }
       } catch (err) {
@@ -606,6 +606,7 @@ var _live_lib_base = function () {
         this.log(global.LiveLib.Style.frontColorHex(0x6495ED), "[TRACE] [", new Date().toISOString(), "] - ", this.name, ": ", ...args);
     };
     global.LiveLib.Logger.prototype.verbose = this.trace;
+
     global.LiveLib.Logger.prototype.debug = function (...args) {
       if (this.isDebug() && args.length > 0)
         this.log(global.LiveLib.Style.frontColor("br_cyan"), "[DEBUG] [", new Date().toISOString(), "] - ", this.name, ": ", ...args);
