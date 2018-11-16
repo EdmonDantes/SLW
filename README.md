@@ -1,6 +1,6 @@
 #LIVe lib
 * Usage
-* [Base][#Base]
+* Base
 * Database
 * Permissions
 * Preference
@@ -117,10 +117,10 @@ LiveLib.db.updateConnection("host","user", "pass");
 ```
 ###Methods
 * `updateConnection(host (string), user (string), password (string), port (number), database (string), count_pools (string))` - update or create connection to mysql. If database not exists, create one.
-* `createRequest(request, ...)` - send query to mysql. Arguments after first change "?" to one.
+* `createRequest(request, callback)` - send query to mysql. Arguments after first change "?" to one.
 * `changeDB(database, callback)` - change database.
 * `deleteDB(database, callback)` - drop database.
-* `createTable(table, ...)` - create table with name of first argument. In other argument you can use string or special object.
+* `createTable(table, ..., callback)` - create table with name of first argument. In other argument you can use string or special object.
     * **Special Object**
         * `<name>` - string
         * `<type>` - string
@@ -132,3 +132,7 @@ LiveLib.db.updateConnection("host","user", "pass");
         * `[notnull]` - bool
         * `[unique]` - bool
         * `[primary]` - bool
+* `deleteTable(table, callback)` - drop table.
+* `insert(table, ..., callback)` - insert information to table. You can use 2 array or object.
+* `select(table [,filters (string or array), where (string or array), groupBy (string or array), limit (number or string), offset (number or string. Need limit for using), having (string., Need groupBy for using)], callback)` - select information from table.
+* `update(table, ..., callback)` - update table. You can use 2 arrays or objects for set updating value in keys. If you want to set condition use key `$$WHERE`

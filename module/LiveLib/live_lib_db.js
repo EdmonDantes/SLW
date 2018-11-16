@@ -290,7 +290,7 @@ var db = async function (settings) {
               if (tmp0 > 0) {
                 promises.push(new Promise((resolve, reject) => {
                   global.LiveLib.db.createRequest(req.substr(0, tmp0) + ") VALUES (?)", values, err => {
-                    if (err) errors[i];
+                    if (err) errors[i] = err;
                     resolve();
                   });
                 }));
