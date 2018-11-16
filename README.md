@@ -116,7 +116,7 @@ require("live_lib")("db");
 LiveLib.db.updateConnection("host","user", "pass");
 ```
 ###Methods
-* `updateConnection(host (string), user (string), password (string), port (number), database (string), count_pools (string))` - update or create connection to mysql. If database not exists, create one.
+* `updateConnection(host (string), user (string), password (string)[, port (number), database (string), count_pools (string)])` - update or create connection to mysql. If database not exists, create one.
 * `createRequest(request, callback)` - send query to mysql. Arguments after first change "?" to one.
 * `changeDB(database, callback)` - change database.
 * `deleteDB(database, callback)` - drop database.
@@ -136,3 +136,10 @@ LiveLib.db.updateConnection("host","user", "pass");
 * `insert(table, ..., callback)` - insert information to table. You can use 2 array or object.
 * `select(table [,filters (string or array), where (string or array), groupBy (string or array), limit (number or string), offset (number or string. Need limit for using), having (string., Need groupBy for using)], callback)` - select information from table.
 * `update(table, ..., callback)` - update table. You can use 2 arrays or objects for set updating value in keys. If you want to set condition use key `$$WHERE`
+###Classes
+* `SQLError`
+    * name - "SQLError"
+    * message - Error message
+    * code - SQL Error code
+## Permissions
+
