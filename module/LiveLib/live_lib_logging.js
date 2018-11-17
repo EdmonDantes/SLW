@@ -526,7 +526,7 @@ let live_lib_logging = function (name) {
 
     }
   }
-
+  obj.init = true;
   obj.postInitFunc(() => {
   });
   return obj;

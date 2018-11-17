@@ -35,6 +35,7 @@ let live_lib_arguments = function () {
       }
     };
 
+    obj.init = true;
     obj.postInitFunc(() => {
     });
 

@@ -14,8 +14,9 @@ let _live_lib_base = function () {
         postInit: false,
         loaded: false,
         stackOfActions: [],
-        postInitFunc: function (handler) {
+        postInitFunc: function (handler, callback) {
           global.LiveLib[name].postInit = true;
+          let errors = false;
           let stack_length = global.LiveLib[name].stackOfActions.length;
           for (let i = 0; i < stack_length; i++) {
             if (typeof global.LiveLib[name].stackOfActions[i] === "function") {
@@ -23,6 +24,7 @@ let _live_lib_base = function () {
                 global.LiveLib[name].stackOfActions[i]();
               } catch (err) {
                 if (err) {
+                  errors = true;
                   if (handler) handler(err);
                   else throw err;
                 }
@@ -31,6 +33,7 @@ let _live_lib_base = function () {
           }
           global.LiveLib[name].stackOfActions = [];
           global.LiveLib[name].loaded = true;
+          if (!errors && callback) callback();
         },
         createFunction: function (name_func, func, handler) {
           global.LiveLib.____CREATE_LIVE_MODULE_FUNCTION(name, name_func, func, handler);
@@ -316,6 +319,8 @@ let _live_lib_base = function () {
       return false;
     };
 
+    obj.init = true;
+
     obj.postInitFunc(err => {
       obj.__CORE_ERROR(319, err);
     });
@@ -352,7 +357,7 @@ let _live_lib_base = function () {
     });
 
     process.on("uncaughtException", (...args) => {
-      ___prout("uncaughtException %o", args);
+      ___prout("uncaughtException %o", args[0]);
       process.exit(0);
     });
 
@@ -378,7 +383,7 @@ let _live_lib_base = function () {
     });
 
     process.on('SIGINT', () => {
-      ___prout(obj.Style.style("bold"), obj.Style.frontColor("red"), "\nCTRL^C");
+      ___prout("\nCTRL^C");
       process.exit(0);
     });
 

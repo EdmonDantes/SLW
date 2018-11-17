@@ -23,7 +23,6 @@ let live_lib_database = function (settings) {
         obj.stackOfActions = [];
         obj.loaded = false;
         obj.postInit = false;
-        obj.init = false;
         obj.usePool = !!pools;
 
         if (obj.connection) obj.connection.end(handler_end);
@@ -53,7 +52,7 @@ let live_lib_database = function (settings) {
                   database: database,
                   connectionLimit: pools
                 });
-                obj.postInit(err0 => {
+                obj.postInitFunc(err0 => {
                   if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "createConnection => ", err0);
                 });
               } else {
@@ -62,7 +61,7 @@ let live_lib_database = function (settings) {
                     if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "createConnection => ", err0);
                   }
                   else {
-                    obj.postInit(err0 => {
+                    obj.postInitFunc(err0 => {
                       if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "createConnection => ", err0);
                     });
                   }
@@ -81,7 +80,7 @@ let live_lib_database = function (settings) {
             connectionLimit: pools
           });
         }
-        obj.postInit(err0 => {
+        obj.postInitFunc(err0 => {
           if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "createConnection => ", err0);
         });
       } catch (err) {
@@ -120,9 +119,12 @@ let live_lib_database = function (settings) {
             if (err) {
               if (callback) callback(err); else global.LiveLib.getLogger().errorm("Database", "changeDB => ", err);
             } else {
-              obj.createRequest("USE " + database + ";", err => {
-                if (err && callback) callback(err);
-              })
+              obj.createRequest("USE `" + database + "`;", err => {
+                if (callback) {
+                  if (err) callback(err);
+                  else callback(null);
+                }
+              });
             }
           });
           return true;
@@ -272,10 +274,10 @@ let live_lib_database = function (settings) {
 
     obj.createFunction("select", function (table, setting, callback) {
       try {
-        if (!table || !setting) return false;
+        if (!table) return false;
         let req = "SELECT ";
 
-        if (settings.filters) {
+        if (settings && settings.filters) {
           if (settings.filters instanceof Array && settings.filters.length > 0) {
             req += settings.filters[0];
             for (let i = 1; i < settings.filters.length; i++) {
@@ -287,7 +289,7 @@ let live_lib_database = function (settings) {
         } else req += "*";
         req += " FROM " + table;
 
-        if (settings.where) {
+        if (settings && settings.where) {
           if (settings.where instanceof Array && settings.where.length > 0) {
             req += " WHERE " + settings.where[0];
             for (let i = 1; i < settings.where.length; i++) {
@@ -298,7 +300,7 @@ let live_lib_database = function (settings) {
           }
         }
 
-        if (settings.groupBy) {
+        if (settings && settings.groupBy) {
           if (settings.groupBy instanceof Array && settings.groupBy.length > 0) {
             req += " GROUP BY " + settings.groupBy[0];
             for (let i = 1; i < settings.groupBy.length; i++) {
@@ -309,12 +311,12 @@ let live_lib_database = function (settings) {
           }
         }
 
-        if (settings.having && settings.groupBy) {
+        if (settings && settings.having && settings.groupBy) {
           req += " HAVING " + settings.having;
         }
 
-        let offset = settings.offset && settings.limit ? settings.offset : "0";
-        if (settings.limit) {
+        let offset = settings && settings.offset && settings.limit ? settings.offset : "0";
+        if (settings && settings.limit) {
           req += " LIMIT " + offset + "," + settings.limit;
         }
 
@@ -416,7 +418,7 @@ let live_lib_database = function (settings) {
         if (err) global.LiveLib.getLogger().errorm("Databases", "[[main]] => ", err);
       }, true);
     }
-
+    obj.init = true;
     global.LiveLib.getLogger().info("LiveLib: Module \"Databases\" loaded!");
 
     return obj;
