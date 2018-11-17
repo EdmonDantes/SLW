@@ -38,7 +38,7 @@ var live_lib_database = function (settings) {
         obj.connection.connect(handler_connect);
 
         if (database) {
-          obj.connection.query("CREATE DATABASE IF NOT EXISTS " + database + ";", err => {
+          obj.connection.query("CREATE DATABASE IF NOT EXISTS `" + database + "`;", err => {
             if (err) {
               if (callback) callback(err); else global.LiveLib.getLogger().errorm("Database", "createConnection => ", err);
             }
@@ -116,7 +116,7 @@ var live_lib_database = function (settings) {
           let config = obj.connection.config.connectionConfig;
           return obj.createConnection(config.host, config.user, config.password, config.port, config.pool.config.connectionLimit, config.database, callback, true);
         } else {
-          obj.createRequest("CREATE DATABASE IF NOT EXISTS " + database, err => {
+          obj.createRequest("CREATE DATABASE IF NOT EXISTS `" + database + "`;", err => {
             if (err) {
               if (callback) callback(err); else global.LiveLib.getLogger().errorm("Database", "changeDB => ", err);
             } else {
@@ -154,7 +154,7 @@ var live_lib_database = function (settings) {
       let callback = l > 0 ? args[l] : undefined;
       try {
         if (!table || args.length < 1) return false;
-        let req = "CREATE TABLE IF NOT EXISTS " + table + "(";
+        let req = "CREATE TABLE IF NOT EXISTS `" + table + "`(";
         for (let i = 0; i < l; i++) {
           let tmp = args[i];
           if (tmp instanceof String) {
