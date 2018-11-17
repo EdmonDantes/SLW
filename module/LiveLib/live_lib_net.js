@@ -10,7 +10,7 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
 
   global.LiveLib.net.getQueryObject = (query) => {
     return global.LiveLib.__GET_LIB("querystring").parse(query, "&", "=");
-  }
+  };
 
   global.LiveLib.net.getArgs = (req, res) => {
     let args = ((req.params && req.params.args) ? global.LiveLib.net.getQueryObject(req.params.args.substr(req.params.args.lastIndexOf("/") + 1)) : undefined);

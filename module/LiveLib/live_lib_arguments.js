@@ -1,4 +1,4 @@
-var live_lib_arguments = function () {
+let live_lib_arguments = function () {
   try {
     if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
     if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
@@ -35,7 +35,7 @@ var live_lib_arguments = function () {
       }
     };
 
-    obj.postInitFunc(err => {
+    obj.postInitFunc(() => {
     });
 
     return obj;

@@ -1,4 +1,4 @@
-var _live_lib_base = function () {
+let _live_lib_base = function () {
   try {
     //Check from init lib
     if (!global.LiveLib) {
@@ -16,8 +16,8 @@ var _live_lib_base = function () {
         stackOfActions: [],
         postInitFunc: function (handler) {
           global.LiveLib[name].postInit = true;
-          stacklen = global.LiveLib[name].stackOfActions.length;
-          for (let i = 0; i < stacklen; i++) {
+          let stack_length = global.LiveLib[name].stackOfActions.length;
+          for (let i = 0; i < stack_length; i++) {
             if (typeof global.LiveLib[name].stackOfActions[i] === "function") {
               try {
                 global.LiveLib[name].stackOfActions[i]();
@@ -134,6 +134,7 @@ var _live_lib_base = function () {
     obj.method = [];
 
     obj.method["=="] = function (a, b, c) {
+      // noinspection EqualityComparisonWithCoercionJS
       return a == b || (a && a[obj.methodsname.equals] && a[obj.methodsname.equals](b)) || (!c && (b && b[obj.methodsname.equals] && b[obj.methodsname.equals](a)));
     };
     obj.method["==="] = function (a, b, c) {
@@ -169,7 +170,7 @@ var _live_lib_base = function () {
     obj.____locationOf = function (element, array, start, end) {
       start = start || 0;
       end = end || array.length;
-      var pivot = parseInt(start + (end - start) / 2, 10);
+      let pivot = parseInt(start + (end - start) / 2, 10);
       if (obj.method["==="](array[pivot], element)) return pivot;
       if (end - start <= 1)
         return obj.method[">"](array[pivot], element) ? pivot - 1 : pivot;
@@ -258,7 +259,7 @@ var _live_lib_base = function () {
       // Handle Array
       if (object instanceof Array) {
         copy = [];
-        for (var i = 0, len = object.length; i < len; i++) {
+        for (let i = 0, len = object.length; i < len; i++) {
           copy[i] = obj.__cloneObject(object[i]);
         }
         return copy;
@@ -304,7 +305,7 @@ var _live_lib_base = function () {
       try {
         if (length > 0 && chars && (typeof chars === "string" || chars instanceof String) && chars.length > 0) {
           let text = "";
-          for (var i = 0; i < length; i++)
+          for (let i = 0; i < length; i++)
             text += chars.charAt(Math.floor(Math.random() * chars.length));
           return text;
         }
@@ -316,7 +317,7 @@ var _live_lib_base = function () {
     };
 
     obj.postInitFunc(err => {
-      obj.__CORE_ERROR(310, "Error on postInitFunction`s stack");
+      obj.__CORE_ERROR(319, err);
     });
 
     function ___prout(...args) {
@@ -376,7 +377,7 @@ var _live_lib_base = function () {
       process.exit(0);
     });
 
-    process.on('SIGINT', (...args) => {
+    process.on('SIGINT', () => {
       ___prout(obj.Style.style("bold"), obj.Style.frontColor("red"), "\nCTRL^C");
       process.exit(0);
     });

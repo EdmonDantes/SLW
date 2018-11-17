@@ -207,7 +207,7 @@ var _live_lib_permission = function () {//TODO: Edit with new version
             if (tmp.value !== global.LiveLib.permissions.PermissionsTree.ALL_STRING) tmp = tmp.getObjectTree(global.LiveLib.permissions.PermissionsTree.ALL_STRING, true);
           }
         }
-        return tmp != undefined && tmp != null && tmp.is_perm && !tmp.is_negative;
+        return tmp !== undefined && tmp != null && tmp.is_perm && !tmp.is_negative;
       } catch (err) {
         if (e) throw e;
         else global.LiveLib.getLogger().error("LiveLib: Module \"Permission\": PermissionsTree => checkPermission - %o", err);

@@ -1,4 +1,4 @@
-var live_lib = function (...args) {
+let live_lib = function (...args) {
   function __loadModule(module, ...args) {
     switch (module) {
       case "base":

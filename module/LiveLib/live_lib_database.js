@@ -1,4 +1,4 @@
-var live_lib_database = function (settings) {
+let live_lib_database = function (settings) {
   try {
     if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
     if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
@@ -175,7 +175,7 @@ var live_lib_database = function (settings) {
               req += " UNIQUE";
             }
 
-            req += ","
+            req += ",";
 
             if (tmp.primary) {
               req += "PRIMARY KEY(" + tmp.name + "),";
@@ -187,7 +187,7 @@ var live_lib_database = function (settings) {
           }
         }
         req = req.substr(0, req.length - 1);
-        req += ");"
+        req += ");";
         return obj.createRequest(req, callback);
       } catch (err) {
         if (callback) callback(err);
@@ -253,7 +253,7 @@ var live_lib_database = function (settings) {
               } else if (callback) callback(new Error("LiveLib: Module: \"Databases\"::insert - Haven`t enouth arguments!"));
             }
           }
-          Promise.all(promises).then(res => {
+          Promise.all(promises).then(() => {
             if (errors.length > 0) {
               if (callback) callback(errors);
               else {
@@ -357,7 +357,7 @@ var live_lib_database = function (settings) {
                 }
               }
 
-              promises.push(new Promise((resolve, reject) => {
+              promises.push(new Promise(resolve => {
                 obj.createRequest(req + ";", err => {
                   if (err) errors[i] = err;
                   resolve();
@@ -385,7 +385,7 @@ var live_lib_database = function (settings) {
                   }
                 }
 
-                promises.push(new Promise((resolve, reject) => {
+                promises.push(new Promise(resolve => {
                   obj.createRequest(req + ";", err => {
                     if (err) errors[i] = err;
                     resolve();
@@ -394,7 +394,7 @@ var live_lib_database = function (settings) {
               } else errors[i] = new Error("LiveLib: Module: \"Databases\"::insert - Haven`t enouth arguments!");
             }
           }
-          Promise.all(promises).then(res => {
+          Promise.all(promises).then(() => {
             if (errors.length > 0) {
               if (callback) callback(errors);
               else {

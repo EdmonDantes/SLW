@@ -1,4 +1,4 @@
-var live_lib_logging = function (name) {
+let live_lib_logging = function (name) {
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
   if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
 
@@ -442,7 +442,7 @@ var live_lib_logging = function (name) {
     if (this.isTrace() && args.length > 0)
       this.log(obj.Style.frontColorHex(0x6495ED), "[TRACE] [", new Date().toISOString(), "] - ", this.name, ": ", ...args);
   };
-  obj.Logger.prototype.verbose = this.trace;
+  obj.Logger.prototype.verbose = obj.Logger.prototype.trace;
 
   obj.Logger.prototype.debug = function (...args) {
     if (this.isDebug() && args.length > 0)
@@ -469,7 +469,7 @@ var live_lib_logging = function (name) {
   obj.Logger.prototype.tracem = function (module, ...args) {
     this.trace("LiveLib --> Module \"" + module + "\": ", ...args);
   };
-  obj.Logger.prototype.verbosem = this.tracem;
+  obj.Logger.prototype.verbosem = obj.Logger.prototype.tracem;
   obj.Logger.prototype.debugm = function (module, ...args) {
     this.debug("LiveLib --> Module \"" + module + "\": ", ...args);
   };
@@ -527,7 +527,7 @@ var live_lib_logging = function (name) {
     }
   }
 
-  obj.postInitFunc(err => {
+  obj.postInitFunc(() => {
   });
   return obj;
 };
