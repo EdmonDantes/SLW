@@ -2,29 +2,24 @@ var live_lib = function (...args) {
   function __loadModule(module, ...args) {
     switch (module) {
       case "base":
-        require("./LiveLib/live_lib_base")();
-        if (args.length > 0)
-          global.LiveLib._live_logger.name = args[0];
-        break;
-      case "db":
-        require("./LiveLib/live_lib_db")(...args);
-        break;
+        return require("./LiveLib/live_lib_base")();
+      case "database":
+        return require("./LiveLib/live_lib_database")(...args);
       case "permission":
-        require("./LiveLib/live_lib_permission")();
-        break;
+        return require("./LiveLib/live_lib_permission")();
       case "preference":
-        require("./LiveLib/live_lib_preference")();
-        break;
+        return require("./LiveLib/live_lib_preference")();
       case "net":
-        require("./LiveLib/live_lib_net")();
-        break;
+        return require("./LiveLib/live_lib_net")();
       case "user_engine":
-        require("./LiveLib/live_lib_user_engine")();
-        break;
+        return require("./LiveLib/live_lib_user_engine")(...args);
+      case "logging":
+        return require("./LiveLib/live_lib_logging")(...args);
+      case "arguments":
+        return require("./LiveLib/live_lib_arguments")(...args);
       default:
         return false;
     }
-    return true;
   }
 
   for (let obj of args) {
@@ -32,6 +27,6 @@ var live_lib = function (...args) {
       __loadModule(obj[0], ...obj.splice(1));
     } else __loadModule(obj);
   }
-}
+};
 
 module.exports = live_lib;

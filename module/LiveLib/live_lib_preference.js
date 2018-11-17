@@ -1,4 +1,4 @@
-var _live_lib_preference = function () {
+var _live_lib_preference = function () {//TODO: Edit with new version
   if (!global.LiveLib) require("./live_lib_base")();
   if (!global.LiveLib.preference || !global.LiveLib.preference.init) {
     global.LiveLib.preference = {

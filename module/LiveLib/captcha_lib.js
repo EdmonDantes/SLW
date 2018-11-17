@@ -2,7 +2,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const request = require("request");
-var downloadFile = (url, cb) => {
+let downloadFile = (url, cb) => {
   if (!url) cb("Haven`t url");
   let req = http;
   if (url.indexOf("https") > -1) req = https;
@@ -15,16 +15,16 @@ var downloadFile = (url, cb) => {
   req.get(url, (res) => {
     res.pipe(stream);
   }).on("error", err => cb(err));
-}
+};
 
 function uploadFile(filePath, cb) {
-  var req = request.post("http://rucaptcha.com/in.php", (err, res, body) => {
+  let req = request.post("http://rucaptcha.com/in.php", (err, res, body) => {
     if (err) cb(err);
     else if (res && res.statusCode === 200 && body.indexOf("ERROR") < 0) {
       cb(null, res.body.split("|")[1]);
     } else cb(body);
   });
-  var form = req.form();
+  let form = req.form();
   form.append("key", "fae0ed2a9b9ec69df6a179fc08d3a540");
   form.append("file", fs.createReadStream(filePath));
 }
@@ -41,7 +41,7 @@ function getAnswer(captchaId, cb) {
   })
 }
 
-var solve = (url, cb) => {
+let solve = (url, cb) => {
   downloadFile(url, (err, fileName) => {
     if (err) cb(err);
     else uploadFile(fileName, (err, res) => {
@@ -52,6 +52,6 @@ var solve = (url, cb) => {
       });
     });
   });
-}
+};
 
 module.exports.solve = solve;

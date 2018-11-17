@@ -1,5 +1,5 @@
 const util = require("util");
-var _live_lib_permission = function () {
+var _live_lib_permission = function () {//TODO: Edit with new version
   try {
     if (!global.LiveLib) require("./live_lib_base")();
     if (!global.LiveLib.permissions || !global.LiveLib.permissions.init) global.LiveLib.permissions = {

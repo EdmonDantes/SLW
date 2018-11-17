@@ -1,4 +1,4 @@
-var live_lib_net = function (settings) {
+var live_lib_net = function (settings) {//TODO: Edit with new version
   debugger;
   if (!global.LiveLib) require("./live_lib_base")();
   if (!global.LiveLib.net || !global.LiveLib.net.init) {

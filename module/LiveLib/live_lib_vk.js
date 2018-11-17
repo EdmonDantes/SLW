@@ -1,9 +1,9 @@
-var live_lib_vk = function (db_settings) {
+var live_lib_vk = function (db_settings) { //TODO: Edit with new version
   if (!global.LiveLib) require("./live_lib_base")();
 
   if (!global.LiveLib.net || !global.LiveLib.net.init) require("./live_lib_net")();
 
-  if (!global.LiveLib.db || !global.LiveLib.db.init) require("./live_lib_db")(db_settings);
+  if (!global.LiveLib.db || !global.LiveLib.db.init) require("./live_lib_database")(db_settings);
 
   if (!global.LiveLib.vk || !global.LiveLib.vk.init) {
     global.LiveLib.vk = {init: true};

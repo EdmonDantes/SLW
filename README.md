@@ -8,15 +8,15 @@
 * User Engine
 ## Usage
 ####Initialization
-```js
+```
 require("live_lib")(<Module name>);
 ```
 **or**
-```js
+```
 require("live_lib")([<Module name 1>, <Module name 2>, ...]);
 ```
 ####Use in code
-```js
+```
 ...
 LiveLib.<Module name>.<Method>([args]);
 ...
@@ -134,7 +134,14 @@ LiveLib.db.updateConnection("host","user", "pass");
         * `[primary]` - bool
 * `deleteTable(table, callback)` - drop table.
 * `insert(table, ..., callback)` - insert information to table. You can use 2 array or object.
-* `select(table [,filters (string or array), where (string or array), groupBy (string or array), limit (number or string), offset (number or string. Need limit for using), having (string., Need groupBy for using)], callback)` - select information from table.
+* `select(table, settings (special object), callback)` - select information from table.
+    * **Special Object**:
+        * `filters` - string or string`s array
+        * `where` - string or string`s array
+        * `groupBy` - string or string`s array
+        * `having` - string (need `groupBy` for using)
+        * `limit` - string or number
+        * `offset` - string or number (need `limit` for using)
 * `update(table, ..., callback)` - update table. You can use 2 arrays or objects for set updating value in keys. If you want to set condition use key `$$WHERE`
 ###Classes
 * `SQLError`
