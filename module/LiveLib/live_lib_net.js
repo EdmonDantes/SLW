@@ -1,30 +1,29 @@
-var live_lib_net = function (settings) {//TODO: Edit with new version
-  debugger;
-  if (!global.LiveLib) require("./live_lib_base")();
-  if (!global.LiveLib.net || !global.LiveLib.net.init) {
-    global.LiveLib.net = {
-      init: true,
-      Version: "1.0",
-    }
-  }
+let live_lib_net = function (settings) {//TODO: Edit with new version
+  if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
+  if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
 
-  global.LiveLib.net.getQueryObject = (query) => {
-    return global.LiveLib.__GET_LIB("querystring").parse(query, "&", "=");
+
+  let base = global.LiveLib.base;
+  global.LiveLib.____LOAD_LIVE_MODULE("logging");
+
+  let obj = global.LiveLib.____CREATE_MODULE("net");
+
+  obj.getQueryObject = (query) => {
+    return base.__GET_LIB("querystring").parse(query, "&", "=");
   };
 
-  global.LiveLib.net.getArgs = (req, res) => {
+  obj.getArgs = (req, res) => {
     let args = ((req.params && req.params.args) ? global.LiveLib.net.getQueryObject(req.params.args.substr(req.params.args.lastIndexOf("/") + 1)) : undefined);
     if (args && args.crossDomenRequest) {
       res.header("Access-Control-Allow-Origin", "*");
       res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     }
     return args;
-  }
+  };
 
-  global.LiveLib.net.Server = function (host = "/", port = 8080, folder = "./html", view_engine = "pug", length_file_name = 60, none_file = "none_file", length_photo_name = length_file_name, none_photo = "none_photo") {
-    debugger;
-    this.app = global.LiveLib.__GET_LIB("express")();
-    this.router = global.LiveLib.__GET_LIB("express").Router();
+  obj.Server = function (host = "/", port = 8080, folder = "./html", view_engine = "pug", length_file_name = 60, none_file = "none_file", length_photo_name = length_file_name, none_photo = "none_photo") {
+    this.app = base.__GET_LIB("express")();
+    this.router = base.__GET_LIB("express").Router();
     this.folder = folder;
     this.length_file_name = length_file_name;
     this.none_file = none_file;
@@ -33,22 +32,22 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
 
     this.app.set("views", this.folder);
     this.app.set("view engine", view_engine);
-    this.app.use(global.LiveLib.__GET_LIB("body-parser").urlencoded({
+    this.app.use(base.__GET_LIB("body-parser").urlencoded({
       extended: true
     }));
-    this.app.use(global.LiveLib.__GET_LIB("body-parser").json());
-    this.app.use(global.LiveLib.__GET_LIB("express-fileupload")());
+    this.app.use(base.__GET_LIB("body-parser").json());
+    this.app.use(base.__GET_LIB("express-fileupload")());
     this.app.use(host, this.router);
     this.server = this.app.listen(process.env.PORT || port || 8080, () => {
       global.LiveLib.getLogger().info("Server started with port : ", process.env.PORT || port || 8080);
     });
 
-    global.LiveLib.createIfNotExists(folder);
-    global.LiveLib.createIfNotExists(folder, "files");
-    global.LiveLib.createIfNotExists(folder, "images");
-  }
+    base.createIfNotExists(folder);
+    base.createIfNotExists(folder, "files");
+    base.createIfNotExists(folder, "images");
+  };
 
-  global.LiveLib.net.Server.prototype.get = function (name, callback, e) {
+  obj.Server.prototype.get = function (name, callback, e) {
     try {
       if (name && (typeof name === "string" || name instanceof String) && name.length > 0) {
         this.router.get(name, (req, res, next) => {
@@ -62,9 +61,9 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
       else global.LiveLib.getLogger().errorm("Net", "Server => get: ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.net.Server.prototype.post = function (name, callback, e) {
+  obj.Server.prototype.post = function (name, callback, e) {
     try {
       if (name && (typeof name === "string" || name instanceof String) && name.length > 0) {
         this.router.post(name, (req, res, next) => {
@@ -78,9 +77,9 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
       else global.LiveLib.getLogger().errorm("Net", "Server => post: ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.net.Server.prototype.putFile = function (name, e) {
+  obj.Server.prototype.putFile = function (name, e) {
     try {
       if (name && (typeof name === "string" || name instanceof String) && name.length > 0) {
         let folder = this.folder;
@@ -96,7 +95,7 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
             }
             res.send(json);
           } else res.sendStatus(400);
-        }
+        };
 
         this.router.post(name, func);
         this.router.put(name, func);
@@ -107,9 +106,9 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
       else global.LiveLib.getLogger().errorm("Net", "Server => putFile: ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.net.Server.prototype.getFile = function (name, e) {
+  obj.Server.prototype.getFile = function (name, e) {
     try {
       if (name && (typeof name === "string" || name instanceof String) && name.length > 0) {
         let path = global.LiveLib.__GET_LIB("path");
@@ -128,9 +127,9 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
       else global.LiveLib.getLogger().errorm("Net", "Server => getFile: ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.net.Server.prototype.putPhoto = function (name, callback, e) {
+  obj.Server.prototype.putPhoto = function (name, callback, e) {
     try {
       if (name && (typeof name === "string" || name instanceof String) && name.length > 0) {
         let folder = this.folder;
@@ -162,8 +161,9 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
       else global.LiveLib.getLogger().errorm("Net", "Server => putPhoto: ", err);
     }
     return false;
-  }
-  global.LiveLib.net.Server.prototype.getPhoto = function (name, e) {
+  };
+
+  obj.Server.prototype.getPhoto = function (name, e) {
     try {
       if (name && (typeof name === "string" || name instanceof String) && name.length > 0) {
         let path = global.LiveLib.__GET_LIB("path");
@@ -182,12 +182,12 @@ var live_lib_net = function (settings) {//TODO: Edit with new version
       else global.LiveLib.getLogger().errorm("Net", "Server => getPhoto: ", err);
     }
     return false;
-  }
+  };
 
   global.LiveLib.net.startServer = function (host, port, folder, view_engine) {
     return new global.LiveLib.net.Server(host, port, folder);
   }
 
-}
+};
 
 module.exports = live_lib_net;

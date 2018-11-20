@@ -162,12 +162,9 @@ let live_lib_logging = function (name) {
 
   obj.Style.frontColor = function (color_or_r, g, b, e) {
     try {
-      if (typeof color_or_r === "string" || color_or_r instanceof String) {
-        return new obj.Style(null, obj.Style.RGBfromString(color_or_r), null);
-      } else {
-        if (g !== undefined && g != null && b !== undefined && b != null) return new obj.Style(null, [color_or_r, g, b], null);
-        else return new obj.Style(null, color_or_r, null);
-      }
+      if (color_or_r && g && b) return new obj.Style(null, [color_or_r, g, b], null);
+      else if (typeof color_or_r === "string" || color_or_r instanceof String) return new obj.Style(null, obj.Style.RGBfromString(color_or_r), null);
+      else return new obj.Style(null, color_or_r, null);
     } catch (err) {
       if (e) throw err;
       else base.__CORE_ERROR(5, err);
@@ -177,12 +174,9 @@ let live_lib_logging = function (name) {
 
   obj.Style.backColor = function (color_or_r, g, b, e) {
     try {
-      if (typeof color_or_r === "string" || color_or_r instanceof String) {
-        return new obj.Style(null, null, obj.Style.RGBfromString(color_or_r));
-      } else {
-        if (g !== undefined && g != null && b !== undefined && b != null) return new obj.Style(null, null, [color_or_r, g, b]);
-        else return new obj.Style(null, null, color_or_r);
-      }
+      if (color_or_r && g && b) return new obj.Style(null, null, [color_or_r, g, b]);
+      else if (typeof color_or_r === "string" || color_or_r instanceof String) return new obj.Style(null, null, obj.Style.RGBfromString(color_or_r));
+      else return new obj.Style(null, null, color_or_r);
     } catch (err) {
       if (e) throw err;
       else base.__CORE_ERROR(6, err);

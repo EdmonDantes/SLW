@@ -8,7 +8,8 @@ let _live_lib_base = function () {
     } else return true;
 
     global.LiveLib.____CREATE_MODULE = function (name) {
-      return global.LiveLib[name] = {
+      if (global.LiveLib[name] && global.LiveLib[name].preInit) return global.LiveLib[name];
+      else return global.LiveLib[name] = {
         preInit: true,
         init: false,
         postInit: false,
