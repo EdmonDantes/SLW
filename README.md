@@ -1,6 +1,8 @@
 #LIVe lib
 * Usage
 * Base
+* Arguments
+* Logging
 * Database
 * Permissions
 * Preference
@@ -9,34 +11,40 @@
 ## Usage
 ####Initialization
 ```
-require("live_lib")(<Module name>);
+require("live_lib")(<Module name 1>, <Module name 2>, ...);
 ```
 **or**
 ```
-require("live_lib")([<Module name 1>, <Module name 2>, ...]);
+require("live_lib")([<Module name 1> ,[arg1, arg2, ...]], [<Module name 2>, [arg1, arg2, ...]], ....);
 ```
 ####Use in code
 ```
 ...
-LiveLib.<Module name>.<Method>([args]);
+LiveLib.<Module name>.<Method or Class>([args]);
 ...
 ```
 ## Base
-All modules using this module, because you may not write one in Initialization. This module change standard ```console.log()``` to ```Logger.log()```  
-All methods and classes in this module use after ```LiveLib.```
+All modules in library using this module. If you foget load this module, other modules load this module itself. This module change standard ```console.log()``` to ```Logger.log()```
 ###Methods
-* ```argsIndex(args (strings' array))``` - return the first index of the entry any string from array in process' argument
-* ```haveArgs(args (strings' array))``` - return true if process' arguments have any string of array
-* ```getArg(arg (string), default_value (object))``` - return value process' argument after arg if process' arguments have arg else return default_value
-* ```createClass(c1 (class), c2 (class))``` - set c2 is parent c1
-* ```createRandomString(length (number)[, chars (string)])``` - create random string with length from chars
-* ```getLogger()``` - return object from logging information.
+* ```getLib(name of lib (stirng))``` - If library exists return one, else return false;
+* ```createClass(c1 (class)[, c2 (class)])``` - c2 or 'object' set parent c1.
+* ```createIfNotExists(path to directory (string))``` - Create path.
+* ```createRandomString(length (number) [, chars (chars for new string)])``` - Create random string from char in chars.
 ###Classes
 #### 1. object
 Standard class for all classes in this library.
 #####Methods
 * ```toString()``` - return string representation of this object
-#### 2. Style
+## Arguments
+### Methods
+* ```argsIndex(args (strings' array))``` - return the first index of the entry any string from array in process' argument
+* ```haveArgs(args (strings' array))``` - return true if process' arguments have any string of array
+* ```getArg(arg (string), default_value (object))``` - return value process' argument after arg if process' arguments have arg else return default_value
+## Logging
+### Methods after load
+* ```getLogger()``` - return object from logging information.
+### Classes
+#### 1. Style
 Class for set style in command line  
 ```Style(style, color, backcolor)``` - style is number of styles' number ANSI. color is number of colors' ANSI or array of RGB. backcolor is number of colors' ANSI or array of RGB.
 #####Methods
@@ -75,7 +83,7 @@ Class for set style in command line
 1. br_magenta
 1. br_cyan
 1. br_white
-#### 3. Logger
+#### 2. Logger
 Class for logging information  
 ```Logger(name (string))``` - create Logger with name.
 #####Methods
@@ -96,6 +104,7 @@ Class for logging information
 * ```error(...)``` - logging information with error`s level
 * ```fatal(...)``` - logging information with fatal`s level
 
+OLD VERSION //TODO: закончить документацию
 ## Database
 This module create for mysql database.
 ###How to start
@@ -149,4 +158,3 @@ LiveLib.db.updateConnection("host","user", "pass");
     * message - Error message
     * code - SQL Error code
 ## Permissions
-

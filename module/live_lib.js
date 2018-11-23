@@ -17,6 +17,8 @@ let live_lib = function (...args) {
         return require("./LiveLib/live_lib_logging")(...args);
       case "arguments":
         return require("./LiveLib/live_lib_arguments")(...args);
+      case "photoEngine":
+        return require("./LiveLib/live_lib_photoEngine")(...args);
       default:
         return false;
     }
