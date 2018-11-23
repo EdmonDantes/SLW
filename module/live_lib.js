@@ -19,6 +19,8 @@ let live_lib = function (...args) {
         return require("./LiveLib/live_lib_arguments")(...args);
       case "photoEngine":
         return require("./LiveLib/live_lib_photoEngine")(...args);
+      case "locale":
+        return require("./LiveLib/live_lib_locale")(...args);
       default:
         return false;
     }
@@ -27,7 +29,7 @@ let live_lib = function (...args) {
   for (let obj of args) {
     if (obj instanceof Array) {
       __loadModule(obj[0], ...obj.splice(1));
-    } else __loadModule(obj);
+    } else return __loadModule(obj);
   }
 };
 

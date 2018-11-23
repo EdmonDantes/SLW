@@ -1,22 +1,23 @@
-var _live_lib_preference = function () {//TODO: Edit with new version
-  if (!global.LiveLib) require("./live_lib_base")();
-  if (!global.LiveLib.preference || !global.LiveLib.preference.init) {
-    global.LiveLib.preference = {
-      init: true
-    };
-    global.LiveLib.__CHECK_LIB("path");
-    global.LiveLib.__CHECK_LIB("fs");
-  } else return false;
+let _live_lib_preference = function () {
+  if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
+  if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
 
-  global.LiveLib.preference.Version = "1.0";
+  let base = global.LiveLib.base;
+  global.LiveLib.____LOAD_LIVE_MODULE("logging");
+  let logger = global.LiveLib.getLogger();
+  let path = base.__GET_LIB("path");
+  let fs = base.__GET_LIB("fs");
 
-  global.LiveLib.preference.PreferenceFile = function (name, coding) {
-    this.name = global.LiveLib.__GET_LIB("path").resolve(name);
-    this.coding = coding ? coding : false;
+  global.LiveLib.preference = function (name) {
+    this.name = path.resolve(name);
     this.value = undefined;
-  }
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.setValue = function (val, e) {
+  let pref = global.LiveLib.preference;
+
+  base.createClass(pref);
+
+  pref.prototype.setValue = function (val, e) {
     try {
       let tmp = val.toString().split("\n");
       this.value = new Map();
@@ -25,41 +26,72 @@ var _live_lib_preference = function () {//TODO: Edit with new version
         if (obj.indexOf("//")) obj = obj.split("//")[0];
 
         let local = obj.split(":");
-        if (local[0] !== undefined && local[0] !== null && local[0].length > 0 && local[1] !== undefined && local[1] !== null && local[1].length > 0) this.value.set(local[0].trim().toLowerCase(), local[1].trim());
+        let name = local[0];
+        let value = local.splice(1).join(":");
+        if (name && name.length > 0 && value && value.length > 0) this.value.set(name.trim().toLowerCase(), value.trim());
       }
-      return this.value;
+      return true;
     } catch (err) {
       if (e) throw err;
-      else global.LiveLib.getLogger().errorm("Preference", "PreferenceFile => loadDataSync: ", err);
+      else logger.errorm("Preference", "setValue => ", err);
     }
-  }
+    return false;
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.loadData = function (callback) {
+  pref.prototype.loadData = function (callback, e) {
     try {
-      global.LiveLib.__GET_LIB("fs").readFile(this.name, (err, res) => {
-        if (err) callback(err);
-        else {
-          callback(null, this.setValue(res));
+      fs.readFile(this.name, (err, res) => {
+        if (callback) {
+          if (err) callback(err);
+          else callback(null, this.setValue(res));
         }
       });
       return true;
     } catch (err) {
-      callback(err);
+      if (e) throw err;
+      else logger.errorm("Preference", "loadData => ", err);
     }
-    return false;
-  }
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.loadDataSync = function (e) {
+  pref.prototype.loadDataSync = function (e) {
     try {
-      return this.setValue(global.LiveLib.__GET_LIB("fs").readFileSync(this.name), true);
+      return this.setValue(fs.readFileSync(this.name), true);
     } catch (err) {
       if (e) throw err;
-      else global.LiveLib.getLogger().errorm("Preference", "PreferenceFile => loadDataSync: ", err);
+      else logger.errorm("Preference", "loadDataSync => ", err);
+    }
+  };
+
+  pref.prototype.get = function (key, def, e) {
+    try {
+      if (this.value) {
+        if (!def) def = false;
+        let tmp = this.value.get(key);
+        if (!tmp && this.new_value) {
+          let tmp0 = this.new_value.get(key);
+          return tmp0 ? tmp0 : def;
+        } else return tmp ? tmp : def;
+      }
+    } catch (err) {
+      if (e) throw err;
+      else logger.errorm("Preference", "get => ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.toString = function (e) {
+  pref.prototype.set = function (key, value, e) {
+    try {
+      if (this.value && key && value) {
+        this.value.set(key, value);
+      }
+    } catch (err) {
+      if (e) throw err;
+      else logger.errorm("Preference", "set => ", err);
+    }
+    return false;
+  };
+
+  pref.prototype.toString = function (e) {
     try {
       if (this.value) {
         let ret = "";
@@ -70,61 +102,43 @@ var _live_lib_preference = function () {//TODO: Edit with new version
       }
     } catch (err) {
       if (e) throw e;
-      else global.LiveLib.getLogger().errorm("Preference", "PreferenceFile => toString: ", err);
+      else logger.errorm("Preference", "toString => ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.saveFile = function (callback) {
+  pref.prototype.saveFile = function (callback, e) {
     try {
       let tmp = this.toString(true);
       if (tmp) {
-        global.LiveLib.__GET_LIB("fs").writeFile(this.name, tmp, callback);
-        return true;
-      }
-    } catch (err) {
-      callback(err);
-    }
-    return false;
-  }
-
-  global.LiveLib.preference.PreferenceFile.prototype.saveFileSync = function (e) {
-    try {
-      let tmp = this.toString(true);
-      if (tmp) {
-        global.LiveLib.__GET_LIB("fs").writeFileSync(this.name, tmp);
+        fs.writeFile(this.name, tmp, err => {
+          if (callback) {
+            if (err) callback(err);
+            else callback(null, true);
+          }
+        });
         return true;
       }
     } catch (err) {
       if (e) throw err;
-      else global.LiveLib.getLogger().errorm("Preference", "PreferenceFile => saveFileSync: ", err);
+      else logger.errorm("Preference", "saveFile => ", err);
     }
-    return false;
-  }
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.get = function (key, def, e) {
+  pref.prototype.saveFileSync = function (e) {
     try {
-      if (!def) def = false;
-      if (this.value) {
-        let tmp = this.value.get(key);
-        return tmp ? tmp : def;
+      let tmp = this.toString(true);
+      if (tmp) {
+        return fs.writeFileSync(this.name, tmp);
       }
     } catch (err) {
       if (e) throw err;
-      else global.LiveLib.getLogger().errorm("Preference", "PreferenceFile => get: ", err);
+      else logger.errorm("Preference", "saveFileSync => ", err);
     }
     return false;
-  }
+  };
 
-  global.LiveLib.preference.PreferenceFile.prototype.set = function (key, value, e) {
-    try {
-      if (this.value) this.value.set(key, value);
-    } catch (err) {
-      if (e) throw err;
-      else global.LiveLib.getLogger().errorm("Preference", "PreferenceFile => set: ", err);
-    }
-    return false;
-  }
-}
+  return pref;
+};
 
 module.exports = _live_lib_preference;
