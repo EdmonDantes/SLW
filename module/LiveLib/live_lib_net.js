@@ -1,15 +1,15 @@
 let live_lib_net = function (settings) {//TODO: Edit with new version
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
-  if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
+  if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
 
 
   let base = global.LiveLib.base;
-  global.LiveLib.____LOAD_LIVE_MODULE("logging");
+  global.LiveLib.loadLiveModule("logging");
 
-  let obj = global.LiveLib.____CREATE_MODULE("net");
+  let obj = global.LiveLib.net = {};
 
   obj.getQueryObject = (query) => {
-    return base.__GET_LIB("querystring").parse(query, "&", "=");
+    return base.getLib("querystring").parse(query, "&", "=");
   };
 
   obj.getArgs = (req, res) => {
@@ -21,9 +21,28 @@ let live_lib_net = function (settings) {//TODO: Edit with new version
     return args;
   };
 
+  obj.getLocalServerIP = function (e) {
+    try {
+      let os = base.getLib("os");
+      var ifaces = os.networkInterfaces();
+      for (let ifname of Object.keys(ifaces)) {
+        for (let iface of ifaces[ifname]) {
+          if ('IPv4' !== iface.family || iface.internal !== false) {
+            // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+            continue;
+          }
+          return iface.address;
+        }
+      }
+    } catch (err) {
+      if (e) throw err;
+      else global.LiveLib.getLogger().errorm("Database", "getLocalServerIP => ", err);
+    }
+  };
+
   obj.Server = function (host = "/", port = 8080, folder = "./html", view_engine = "pug", length_file_name = 60, none_file = "none_file", length_photo_name = length_file_name, none_photo = "none_photo") {
-    this.app = base.__GET_LIB("express")();
-    this.router = base.__GET_LIB("express").Router();
+    this.app = base.getLib("express")();
+    this.router = base.getLib("express").Router();
     this.folder = folder;
     this.length_file_name = length_file_name;
     this.none_file = none_file;
@@ -32,11 +51,11 @@ let live_lib_net = function (settings) {//TODO: Edit with new version
 
     this.app.set("views", this.folder);
     this.app.set("view engine", view_engine);
-    this.app.use(base.__GET_LIB("body-parser").urlencoded({
+    this.app.use(base.getLib("body-parser").urlencoded({
       extended: true
     }));
-    this.app.use(base.__GET_LIB("body-parser").json());
-    this.app.use(base.__GET_LIB("express-fileupload")());
+    this.app.use(base.getLib("body-parser").json());
+    this.app.use(base.getLib("express-fileupload")());
     this.app.use(host, this.router);
     this.server = this.app.listen(process.env.PORT || port || 8080, () => {
       global.LiveLib.getLogger().info("Server started with port : ", process.env.PORT || port || 8080);

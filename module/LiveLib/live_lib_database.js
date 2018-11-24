@@ -1,24 +1,13 @@
 let live_lib_database = function (settings) {
   try {
     if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
-    if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
+    if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
 
     let base = global.LiveLib.base;
-    global.LiveLib.____LOAD_LIVE_MODULE("logging");
-
-    let obj = global.LiveLib.____CREATE_MODULE("database");
+    global.LiveLib.loadLiveModule("logging");
 
 
-    obj.SQLError = function (code, message) {
-      this.name = "SQLError";
-      this.message = message || "Unknowns error in sql";
-      this.code = code || -1;
-      this.stack = (new Error()).stack;
-    };
-
-    base.createClass(obj.SQLError, Error);
-
-    obj.Database = function (host, user, password, port, database, pools, callback, e, handler_end, handler_connect) {
+    global.LiveLib.database = function (host, user, password, port, database, pools, callback, e, handler_end, handler_connect) {
       this.connect = false;
       this.connection = null;
       this.stackOfActions = [];
@@ -28,9 +17,20 @@ let live_lib_database = function (settings) {
       }
     };
 
-    base.createClass(obj.Database);
+    let db = global.LiveLib.database;
 
-    obj.Database.prototype.postInitFunc = function (handler, callback) {
+    base.createClass(db);
+
+    db.SQLError = function (code, message) {
+      this.name = "SQLError";
+      this.message = message || "Unknowns error in sql";
+      this.code = code || -1;
+      this.stack = (new Error()).stack;
+    };
+
+    base.createClass(db.SQLError, Error);
+
+    db.prototype.postInitFunc = function (handler, callback) {
       this.connect = true;
       let errors = false;
       let stack_length = this.stackOfActions.length;
@@ -52,7 +52,7 @@ let live_lib_database = function (settings) {
       if (!errors && callback) callback();
     };
 
-    obj.Database.prototype.connectTo = function (host, user, password, port, database, pools, callback, e, handler_end, handler_connect) {
+    db.prototype.connectTo = function (host, user, password, port, database, pools, callback, e, handler_end, handler_connect) {
       try {
         this.stackOfActions = [];
         this.connect = false;
@@ -60,7 +60,7 @@ let live_lib_database = function (settings) {
 
         if (this.connection) this.connection.end(handler_end);
 
-        this.connection = base.__GET_LIB("mysql").createConnection({
+        this.connection = base.getLib("mysql").createConnection({
           host: host,
           port: port,
           user: user,
@@ -77,7 +77,7 @@ let live_lib_database = function (settings) {
             else {
               if (this.usePool) {
                 this.connection.end(handler_end);
-                this.connection = base.__GET_LIB("mysql").createConnection({
+                this.connection = base.getLib("mysql").createConnection({
                   host: host,
                   port: port,
                   user: user,
@@ -104,7 +104,7 @@ let live_lib_database = function (settings) {
           });
         } else if (this.usePool) {
           this.connection.end(handler_end);
-          this.connection = base.__GET_LIB("mysql").createConnection({
+          this.connection = base.get_LIB("mysql").createConnection({
             host: host,
             port: port,
             user: user,
@@ -117,16 +117,16 @@ let live_lib_database = function (settings) {
           });
         }
       } catch (err) {
-        if (e || !callback) throw e;
-        else callback(e);
+        if (e || !callback) throw err;
+        else callback(err);
       }
     };
 
-    obj.Database.prototype.isLoad = function () {
+    db.prototype.isLoad = function () {
       return this.connect && this.connection;
     };
 
-    obj.Database.prototype.createRequest = function (request, ...args) {
+    db.prototype.createRequest = function (request, ...args) {
       if (!this.isLoad()) {
         let db = this;
         this.stackOfActions.push(function () {
@@ -135,7 +135,7 @@ let live_lib_database = function (settings) {
         return true;
       }
       else {
-        let index = base.__getIndexCallback(args);
+        let index = base.getIndexCallback(args);
         let callback = index > -1 ? args[index] : undefined;
         try {
           global.LiveLib.getLogger().tracem("Database", "createRequest => request: \"", request, "\"; args: ", args);
@@ -154,8 +154,8 @@ let live_lib_database = function (settings) {
       }
     };
 
-    obj.Database.prototype.changeDB = function (database, ...args) {
-      let callback = base.__getCallback(args);
+    db.prototype.changeDB = function (database, ...args) {
+      let callback = base.getCallback(args);
       try {
         if (this.usePool) {
           let config = this.connection.config.connectionConfig;
@@ -182,8 +182,8 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.Database.prototype.deleteDB = function (database, ...args) {
-      let callback = base.__getCallback(args);
+    db.prototype.deleteDB = function (database, ...args) {
+      let callback = base.getCallback(args);
       try {
         if (database && !this.usePool) {
           return this.createRequest("DROP DATABASE " + database, err => {
@@ -197,8 +197,8 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.Database.prototype.createTable = function (table, ...args) {
-      let l = base.__getIndexCallback(args);
+    db.prototype.createTable = function (table, ...args) {
+      let l = base.getIndexCallback(args);
       let callback = l > 0 ? args[l] : undefined;
       try {
         if (!table || args.length < 1) return false;
@@ -244,8 +244,8 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.Database.prototype.deleteTable = function (table, ...args) {
-      let l = base.__getIndexCallback(args);
+    db.prototype.deleteTable = function (table, ...args) {
+      let l = base.getIndexCallback(args);
       let callback = l > 0 ? args[l] : undefined;
       try {
         if (!table || args.length < 1) return false;
@@ -257,8 +257,8 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.Database.prototype.insert = function (table, ...args) {
-      let l = base.__getIndexCallback(args);
+    db.prototype.insert = function (table, ...args) {
+      let l = base.getIndexCallback(args);
       let callback = l > 0 ? args[l] : undefined;
       try {
         if (!table || args.length < 1) return false;
@@ -268,6 +268,7 @@ let live_lib_database = function (settings) {
         } else {
           let promises = [];
           let errors = [];
+          let returns = [];
           for (let i = 0; i < l; i++) {
             if (args[i] instanceof Array && i + 1 < l && args[i + 1] instanceof Array && args[i].length > 0 && args[i + 1].length > 0) {
               let req = "INSERT INTO " + table + "(" + args[i][0];
@@ -275,8 +276,9 @@ let live_lib_database = function (settings) {
                 req += "," + args[i][j];
               }
               promises.push(new Promise(resolve => {
-                this.createRequest(req + ") VALUES (?);", args[i + 1], err => {
+                this.createRequest(req + ") VALUES (?);", args[i + 1], (err, res) => {
                   if (err) errors[i] = err;
+                  else returns[i] = res;
                   resolve();
                 });
               }));
@@ -293,8 +295,9 @@ let live_lib_database = function (settings) {
               let tmp0 = req.lastIndexOf(",");
               if (tmp0 > 0) {
                 promises.push(new Promise(resolve => {
-                  this.createRequest(req.substr(0, tmp0) + ") VALUES (?)", values, err => {
+                  this.createRequest(req.substr(0, tmp0) + ") VALUES (?)", values, (err, res) => {
                     if (err) errors[i] = err;
+                    else returns[i] = res;
                     resolve();
                   });
                 }));
@@ -307,7 +310,7 @@ let live_lib_database = function (settings) {
               else {
                 global.LiveLib.getLogger().warnm("Database", "insert => Non catched error - ", errors);
               }
-            } else if (callback) callback(null, true);
+            } else if (callback) callback(null, returns);
           });
           return true;
         }
@@ -318,7 +321,7 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.Database.prototype.select = function (table, setting, callback) {
+    db.prototype.select = function (table, settings, callback) {
       try {
         if (!table) return false;
         let req = "SELECT ";
@@ -374,8 +377,8 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.Database.prototype.update = function (table, ...args) {
-      let l = base.__getIndexCallback(args);
+    db.prototype.update = function (table, ...args) {
+      let l = base.getIndexCallback(args);
       let callback = l > -1 ? args[l] : undefined;
       try {
         if (!table) return false;
@@ -385,6 +388,7 @@ let live_lib_database = function (settings) {
         } else {
           let promises = [];
           let errors = [];
+          let returns = [];
           for (let i = 0; i < l; i++) {
             if (args[i] instanceof Array && i + 1 < l && args[i + 1] instanceof Array && args[i].length > 0 && args[i + 1].length > 0) {
               let req = "UPDATE " + table + " SET ";
@@ -406,8 +410,9 @@ let live_lib_database = function (settings) {
               }
 
               promises.push(new Promise(resolve => {
-                this.createRequest(req + ";", err => {
+                this.createRequest(req + ";", (err, res) => {
                   if (err) errors[i] = err;
+                  else returns[i] = res;
                   resolve();
                 });
               }));
@@ -436,6 +441,7 @@ let live_lib_database = function (settings) {
                 promises.push(new Promise(resolve => {
                   this.createRequest(req + ";", err => {
                     if (err) errors[i] = err;
+                    else returns[i] = res;
                     resolve();
                   });
                 }));
@@ -448,7 +454,7 @@ let live_lib_database = function (settings) {
               else {
                 global.LiveLib.getLogger().warnm("Database", "update => Non catched error - ", errors);
               }
-            } else if (callback) callback(null, true);
+            } else if (callback) callback(null, returns);
           });
           return true;
         }
@@ -459,15 +465,11 @@ let live_lib_database = function (settings) {
       return false;
     };
 
-    obj.init = true;
     global.LiveLib.getLogger().info("LiveLib: Module \"Databases\" loaded!");
-    obj.postInitFunc(() => {
-    }, () => {
-    });
 
-    return obj;
+    return db;
   } catch (err) {
-    console.error(err);
+    console.log(err);
   }
   return false;
 };

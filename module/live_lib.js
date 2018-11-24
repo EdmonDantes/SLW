@@ -1,4 +1,4 @@
-let live_lib = function (...args) {
+let live_lib = async function (...args) {
   function __loadModule(module, ...args) {
     switch (module) {
       case "base":
@@ -11,8 +11,8 @@ let live_lib = function (...args) {
         return require("./LiveLib/live_lib_preference")();
       case "net":
         return require("./LiveLib/live_lib_net")();
-      case "user_engine":
-        return require("./LiveLib/live_lib_user_engine")(...args);
+      case "userEngine":
+        return require("./LiveLib/live_lib_userEngine")(...args);
       case "logging":
         return require("./LiveLib/live_lib_logging")(...args);
       case "arguments":
@@ -26,11 +26,18 @@ let live_lib = function (...args) {
     }
   }
 
+  promises = [];
   for (let obj of args) {
-    if (obj instanceof Array) {
-      __loadModule(obj[0], ...obj.splice(1));
-    } else return __loadModule(obj);
+
+    promises.push(new Promise(resolve => {
+      if (obj instanceof Array) {
+        __loadModule(obj[0], ...obj.splice(1));
+      } else return __loadModule(obj);
+      resolve();
+    }));
   }
+
+  await Promise.all(promises);
 };
 
 module.exports = live_lib;

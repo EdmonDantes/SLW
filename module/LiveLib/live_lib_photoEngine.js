@@ -1,36 +1,39 @@
 let live_lib_photoEngine = function () {//TODO: create new module
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
-  if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
-  global.LiveLib.____LOAD_LIVE_MODULE("logging");
+  if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
+  global.LiveLib.loadLiveModule("logging");
   let base = global.LiveLib.base;
-  let Database = global.LiveLib.____LOAD_LIVE_MODULE("database").Database;
-  let path = base.__GET_LIB("path");
-  let fs = base.__GET_LIB("fs");
-  let gm = base.__GET_LIB("gm");
-  let obj = global.LiveLib.____CREATE_MODULE("photoEngine");
+  let Database = global.LiveLib.loadLiveModule("database");
+  let path = base.getLib("path");
+  let url = base.getLib("url");
+  //let fs = base.__GET_LIB("fs");
+  let gm = base.getLib("gm");
 
-  obj.PhotoEngine = function (folder, host, user, password, database, port, count_pools = 20) {
+  global.LiveLib.photoEngine = function (folder, host, user, password, database, port, count_pools = 20) {
     base.createIfNotExists(folder);
     this.folder = path.resolve(folder);
     this.db = new Database(host, user, password, port, database, count_pools, err => {
-      if (err) global.LiveLib.getLogger().errorm("Photo Engine", "[[constructor]] - create connection to db: ", err);
+      global.LiveLib.getLogger().errorm("Photo Engine", "[[constructor]] - create connection to db: ", err);
     });
     this.db.createTable("photo_engine", {
-      name: "id",
-      type: "INT UNSIGNED",
-      autoincrement: true,
-      notnull: true,
-      primary: true
-    }, {name: "type", type: "TINYINT UNSIGNED", notnull: true, default: 3}, {name: "url", type: "BLOB"}, (err) => {
-      if (err) global.LiveLib.getLogger().errorm("Photo Engine", "[[constructor]] - createTable: ", err);
-    });
+        name: "id",
+        type: "INT UNSIGNED",
+        autoincrement: true,
+        notnull: true,
+        primary: true
+      },
+      {name: "type", type: "TINYINT UNSIGNED", notnull: true, default: 3}, {name: "url", type: "BLOB"}, (err) => {
+        if (err) global.LiveLib.getLogger().errorm("Photo Engine", "[[constructor]] - createTable: ", err);
+      });
   };
 
-  base.createClass(obj.PhotoEngine);
+  let photoengine = global.LiveLib.photoEngine;
 
-  obj.PhotoEngine.prototype.sendPhotoToServer = function (buffer_of_file, type_of_image, url, callback, e) { // TODO: create url in database for file
+  base.createClass(photoengine);
+
+  photoengine.prototype.sendPhotoToServer = function (buffer_of_file, type_of_image, url_path, callback, e) { // TODO: create url in database for file
     try {
-      function write(db, photo, folder, type, url, callback) {
+      function write(db, photo, folder, type, url_path, callback) {
         photo.format((err, val) => {
           if (err) {
             if (callback) callback(err);
@@ -38,13 +41,18 @@ let live_lib_photoEngine = function () {//TODO: create new module
           else {
             let name = base.createRandomString(65) + "." + val;
             let file_name = path.join(folder, name);
-            let db_url = path.join(url, name);
+            let db_url = url.resolve(url_path, "photo=" + name);
             photo.write(file_name, err => {
               if (err) {
                 if (callback) callback(err);
               }
               else {
-                db.insert("photo_engine", {type: type, url: db_url}, callback);
+                db.insert("photo_engine", {type: type, url: db_url}, (err, res) => {
+                  if (callback) {
+                    if (err) callback(err[0]);
+                    else callback(null, res[0].insertId);
+                  }
+                });
               }
             });
           }
@@ -60,7 +68,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
           case "1":
           case 1://very small round photo 50x50 px
             photo = photo.resize(50, 50).autoOrient();
-            return write(this.db, photo, this.folder, type_of_image, url, callback);
+            return write(this.db, photo, this.folder, type_of_image, url_path, callback);
           case "2":
           case 2: //medium photo 200x(h/w) * 200 or 200x200 px
             photo.size((err, val) => {
@@ -70,7 +78,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
               else {
                 let new_height = val.width / val.height * 200;
                 photo = photo.resize(200, new_height > 300 ? 300 : new_height).autoOrient();
-                write(this.db, photo, this.folder, type_of_image, url, callback);
+                write(this.db, photo, this.folder, type_of_image, url_path, callback);
               }
             });
             return true;
@@ -100,23 +108,38 @@ let live_lib_photoEngine = function () {//TODO: create new module
     } catch (err) {
       if (e) throw err;
       else if (callback) callback(err);
+      else global.LiveLib.getLogger().errorm("Photo Engine", "sendPhotoToServer => ", err);
     }
-    callback(new Error("Wrong photo"));
+    callback("photo.wrong");
     return false;
   };
 
-  obj.PhotoEngine.prototype.sendPhotoFromServer = function (photo_name, type_of_photo) {
-    //TODO: create function
+  photoengine.prototype.sendPhotoFromServer = function (id_photo, type_of_photo, callback, e) {
+    try {
+      this.db.select("photo_engine", {where: "id = " + id_photo + " AND type = " + type_of_photo}, (err, val) => {
+        if (callback) {
+          if (err) callback(err);
+          else {
+            if (val.length > 0) {
+              callback(null, val[0].url.toString());
+            } else {
+              callback("photo.not.find");
+            }
+          }
+        }
+      });
+    } catch (err) {
+      if (e) throw err;
+      else if (callback) callback(err);
+      else global.LiveLib.getLogger().errorm("Photo Engine", "sendPhotoFromServer => ", err);
+    }
   };
 
-  obj.PhotoEngine.prototype.setSettings = function (settings) {
-    //TODO: create function
+  photoengine.prototype.getPhoto = function (name) {
+    return path.join(this.folder, name);
   };
 
-  obj.init = true;
-  obj.postInitFunc(() => {
-  });
-  return obj;
+  return photoengine;
 };
 
 module.exports = live_lib_photoEngine;

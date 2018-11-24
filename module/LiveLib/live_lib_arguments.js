@@ -1,9 +1,10 @@
 let live_lib_arguments = function () {
   try {
     if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
-    if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
+    if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
 
-    let obj = global.LiveLib.____CREATE_MODULE("arguments");
+    let obj = global.LiveLib.arguments = {};
+    let base = global.LiveLib.base;
 
     obj.argsIndex = function (args) {
       try {
@@ -14,7 +15,7 @@ let live_lib_arguments = function () {
         }
         return ret;
       } catch (err) {
-        global.LiveLib.base.__CORE_ERROR(1, err);
+        base.__CORE_ERROR(5, err);
       }
       return [];
     };
@@ -31,17 +32,13 @@ let live_lib_arguments = function () {
         }
         return default_value;
       } catch (err) {
-        global.LiveLib.base.__CORE_ERROR(2, err);
+        base.__CORE_ERROR(6, err);
       }
     };
 
-    obj.init = true;
-    obj.postInitFunc(() => {
-    });
-
     return obj;
   } catch (err) {
-    global.LiveLib.base.__CORE_ERROR(43, err);
+    global.LiveLib.base.__CORE_ERROR(7, err);
     return false;
   }
 };

@@ -1,12 +1,12 @@
 let _live_lib_preference = function () {
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
-  if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
+  if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
 
   let base = global.LiveLib.base;
-  global.LiveLib.____LOAD_LIVE_MODULE("logging");
+  global.LiveLib.loadLiveModule("logging");
   let logger = global.LiveLib.getLogger();
-  let path = base.__GET_LIB("path");
-  let fs = base.__GET_LIB("fs");
+  let path = base.getLib("path");
+  let fs = base.getLib("fs");
 
   global.LiveLib.preference = function (name) {
     this.name = path.resolve(name);

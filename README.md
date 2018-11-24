@@ -158,3 +158,25 @@ LiveLib.db.updateConnection("host","user", "pass");
     * message - Error message
     * code - SQL Error code
 ## Permissions
+
+## Loading priority
+1. `live_lib_base.js`
+2. `live_lib_arguments.js`
+3. `live_live_logging.js`
+
+## Core Errors
+1. `Base.getLib`
+2. `Base.clone`
+3. `Base.createIfNotExists`
+4. `[[Base]]`
+5. `Arguments.argsIndex`
+6. `Arguments.getArg`
+7. `[[Arguments]]`
+8. `Logging.Style.prototype.get`
+9. `Logging.Style.style`
+10. `Logging.Style.frontColor`
+11. `Logging.Style.backColor`
+12. `Logging.Style.getRGBFromHex`
+13. `Logging.Style.frontColorHex`
+14. `Logging.Style.backColorHex`
+15. `Logging.Logger.prototype.setLevel`

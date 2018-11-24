@@ -3,46 +3,11 @@ let _live_lib_base = function () {
     //Check from init lib
     if (!global.LiveLib) {
       global.LiveLib = {
-        Version: 1.1
+        Version: 1.2
       };
     } else return true;
 
-    global.LiveLib.____CREATE_MODULE = function (name) {
-      if (global.LiveLib[name] && global.LiveLib[name].preInit) return global.LiveLib[name];
-      else return global.LiveLib[name] = {
-        preInit: true,
-        init: false,
-        postInit: false,
-        loaded: false,
-        stackOfActions: [],
-        postInitFunc: function (handler, callback) {
-          global.LiveLib[name].postInit = true;
-          let errors = false;
-          let stack_length = global.LiveLib[name].stackOfActions.length;
-          for (let i = 0; i < stack_length; i++) {
-            if (typeof global.LiveLib[name].stackOfActions[i] === "function") {
-              try {
-                global.LiveLib[name].stackOfActions[i]();
-              } catch (err) {
-                if (err) {
-                  errors = true;
-                  if (handler) handler(err);
-                  else throw err;
-                }
-              }
-            }
-          }
-          global.LiveLib[name].stackOfActions = [];
-          global.LiveLib[name].loaded = true;
-          if (!errors && callback) callback();
-        },
-        createFunction: function (name_func, func, handler) {
-          global.LiveLib.____CREATE_LIVE_MODULE_FUNCTION(name, name_func, func, handler);
-        }
-      }
-    };
-
-    global.LiveLib.____LOAD_LIVE_MODULE = function (name) {
+    global.LiveLib.loadLiveModule = function (name) {
       try {
         if (global.LiveLib[name]) return global.LiveLib[name];
         else {
@@ -54,35 +19,9 @@ let _live_lib_base = function () {
       return false;
     };
 
-    global.LiveLib.____CREATE_LIVE_MODULE_FUNCTION = function (name_module, name_func, func, handler = function (err) {
-      console.log(err);
-    }) {
-      try {
-        if (global.LiveLib[name_module]) {
-          global.LiveLib[name_module][name_func] = function (...args) {
-            if (!global.LiveLib[name_module].postInit) {
-              global.LiveLib[name_module].stackOfActions.push(global.LiveLib[name_module][name_func](...args));
-              return true;
-            }
-            else {
-              try {
-                return func(...args);
-              } catch (err) {
-                if (handler) handler(err);
-              }
-              return false;
-            }
-          }
-        }
-        return true;
-      } catch (err) {
-        console.log(err);
-      }
-      return false;
-    };
+    let base = global.LiveLib.base = {};
 
-    let obj = global.LiveLib.____CREATE_MODULE("base");
-    obj.__CORE_ERROR = function (code, err) {
+    base.__CORE_ERROR = function (code, err) {
       try {
         console.log("LiveLib: Error #" + code + ": ", err);
         return true;
@@ -94,39 +33,26 @@ let _live_lib_base = function () {
       }
     };
 
-    obj.__CHECK_LIB = function (lib, load = true, start = false, ...args) {
+    base.getLib = function (lib, load = true, start = false, ...args) {
       try {
         if (lib instanceof Array) {
-          for (let obj of lib) {
-            obj.__CHECK_LIB(obj, load, start, ...args);
+          let res = [];
+          for (let i = 0; i < lib.length; i++) {
+            res[i] = base.getLib(lib[i], load, start, ...args);
           }
-        } else if (obj["_lib_" + lib]) return true;
+          return res;
+        } else if (base["__lib_" + lib])
+          return base["__lib_" + lib];
         else if (load) {
-          if (start) {
-            obj["_lib_" + lib] = require(lib)(...args);
-          } else {
-            obj["_lib_" + lib] = require(lib);
-          }
-          return true;
+          return base["__lib_" + lib] = start ? require(lib)(...args) : require(lib);
         }
-        return false;
       } catch (err) {
-        obj.__CORE_ERROR(11, err);
+        base.__CORE_ERROR(1, err);
       }
+      return false;
     };
 
-    obj.__GET_LIB = function (lib) {
-      try {
-        if (!obj["_lib_" + lib]) {
-          obj.__CHECK_LIB(lib);
-        }
-        return obj["_lib_" + lib];
-      } catch (err) {
-        obj.__CORE_ERROR(12, err);
-      }
-    };
-
-    obj.methodsname = {
+    base.methodsname = {
       equals: "_live_equals",
       strongEquals: "_live_strong_equals",
       biggerOrEquals: "_live_bigger_or_equals",
@@ -135,59 +61,59 @@ let _live_lib_base = function () {
       bigger: "_live_bigger",
     };
 
-    obj.method = [];
+    base.method = [];
 
-    obj.method["=="] = function (a, b, c) {
+    base.method["=="] = function (a, b, c) {
       // noinspection EqualityComparisonWithCoercionJS
-      return a == b || (a && a[obj.methodsname.equals] && a[obj.methodsname.equals](b)) || (!c && (b && b[obj.methodsname.equals] && b[obj.methodsname.equals](a)));
+      return a == b || (a && a[base.methodsname.equals] && a[base.methodsname.equals](b)) || (!c && (b && b[base.methodsname.equals] && b[base.methodsname.equals](a)));
     };
-    obj.method["==="] = function (a, b, c) {
-      return a === b || (a && a[obj.methodsname.strongEquals] && a[obj.methodsname.strongEquals](b)) || (!c && (b && b[obj.methodsname.strongEquals] && b[obj.methodsname.strongEquals](a)));
+    base.method["==="] = function (a, b, c) {
+      return a === b || (a && a[base.methodsname.strongEquals] && a[base.methodsname.strongEquals](b)) || (!c && (b && b[base.methodsname.strongEquals] && b[base.methodsname.strongEquals](a)));
     };
-    obj.method[">="] = function (a, b, c) {
-      return a >= b || (a && a[obj.methodsname.biggerOrEquals] && a[obj.methodsname.biggerOrEquals](b)) || (!c && obj.method["<="](b, a, true));
+    base.method[">="] = function (a, b, c) {
+      return a >= b || (a && a[base.methodsname.biggerOrEquals] && a[base.methodsname.biggerOrEquals](b)) || (!c && base.method["<="](b, a, true));
     };
-    obj.method["<="] = function (a, b, c) {
-      return a <= b || (a && a[obj.methodsname.lessOrEquals] && a[obj.methodsname.lessOrEquals](b)) || (!c && obj.method[">="](b, a, true));
+    base.method["<="] = function (a, b, c) {
+      return a <= b || (a && a[base.methodsname.lessOrEquals] && a[base.methodsname.lessOrEquals](b)) || (!c && base.method[">="](b, a, true));
     };
-    obj.method["<"] = function (a, b) {
-      return !obj.method[">="](a, b);
+    base.method["<"] = function (a, b) {
+      return !base.method[">="](a, b);
     };
-    obj.method[">"] = function (a, b) {
-      return !obj.method["<="](a, b);
+    base.method[">"] = function (a, b) {
+      return !base.method["<="](a, b);
     };
 
-    Array.prototype.indexOfSort = function (data) {
+    Array.prototype.binarySearch = function (data) {
       let start = 0,
         end = this.length - 1;
       if (data) {
         while (start < end) {
           let mid = start + Math.floor((end - start) / 2);
-          if (obj.method[">="](this[mid], data)) end = mid;
+          if (base.method[">="](this[mid], data)) end = mid;
           else start = mid + 1;
         }
-        if (obj.method["==="](this[end], data)) return end;
+        if (base.method["==="](this[end], data)) return end;
       }
       return -1;
     };
 
-    obj.____locationOf = function (element, array, start, end) {
+    Array.prototype.____locationOf = function (element, array, start, end) {
       start = start || 0;
       end = end || array.length;
       let pivot = parseInt(start + (end - start) / 2, 10);
-      if (obj.method["==="](array[pivot], element)) return pivot;
+      if (base.method["==="](array[pivot], element)) return pivot;
       if (end - start <= 1)
-        return obj.method[">"](array[pivot], element) ? pivot - 1 : pivot;
-      if (obj.method["<"](array[pivot], element)) {
-        return obj.____locationOf(element, array, pivot, end);
+        return base.method[">"](array[pivot], element) ? pivot - 1 : pivot;
+      if (base.method["<"](array[pivot], element)) {
+        return base.____locationOf(element, array, pivot, end);
       } else {
-        return obj.____locationOf(element, array, start, pivot);
+        return base.____locationOf(element, array, start, pivot);
       }
     };
 
 
     Array.prototype.insertSort = function (data) {
-      this.splice(obj.____locationOf(data, this) + 1, 0, data);
+      this.splice(this.____locationOf(data, this) + 1, 0, data);
     };
 
     Array.fromSet = function (set) {
@@ -223,20 +149,20 @@ let _live_lib_base = function () {
 
     //Parent for all class in LiveLib
 
-    obj.object = function () {
+    base.object = function () {
     };
-    obj.object.prototype.toString = function () {
+    base.object.prototype.toString = function () {
       return "[LIVe Object]";
     };
-    obj.object.prototype.inspect = function () {
+    base.object.prototype.inspect = function () {
       return "LiveLib => object : " + this.toString();
     };
 
-    obj.createClass = function (c1, c2) {
-      obj.__GET_LIB("util").inherits(c1, c2 ? c2 : obj.object);
+    base.createClass = function (c1, c2) {
+      base.getLib("util").inherits(c1, c2 ? c2 : base.object);
     };
 
-    obj.__getIndexCallback = function (args) {
+    base.getIndexCallback = function (args) {
       if (args !== undefined && args != null && args instanceof Array)
         for (let i = 0; i < args.length; i++) {
           if (args[i] instanceof Function) return i;
@@ -244,12 +170,12 @@ let _live_lib_base = function () {
       return -1;
     };
 
-    obj.__getCallback = function (args) {
-      let l = obj.__getIndexCallback(args);
+    base.getCallback = function (args) {
+      let l = base.getIndexCallback(args);
       return l > -1 ? args[l] : undefined;
     };
 
-    obj.__cloneObject = function (object) {
+    base.clone = function (object) {
       let copy;
       if (undefined === object || null == object || "object" !== typeof object) return object;
 
@@ -264,7 +190,7 @@ let _live_lib_base = function () {
       if (object instanceof Array) {
         copy = [];
         for (let i = 0, len = object.length; i < len; i++) {
-          copy[i] = obj.__cloneObject(object[i]);
+          copy[i] = base.clone(object[i]);
         }
         return copy;
       }
@@ -273,24 +199,24 @@ let _live_lib_base = function () {
       if (object instanceof Object) {
         copy = {};
         for (let attr in object) {
-          if (object.hasOwnProperty(attr)) copy[attr] = obj.__cloneObject(object[attr]);
+          if (object.hasOwnProperty(attr)) copy[attr] = base.clone(object[attr]);
         }
         return copy;
       }
 
-      throw new Error("Unable to copy obj! Its type isn't supported.");
+      base.__CORE_ERROR(2, "Unable to copy obj! Its type isn't supported.");
     };
 
-    obj.createIfNotExists = function (...args) {
+    base.createIfNotExists = function (...args) {
       try {
-        let path = obj.__GET_LIB("path");
+        let path = base.getLib("path");
         let name = "";
         for (let obj of args) {
           name = path.join(name, obj);
         }
         let path0 = path.resolve(name);
         let parts = path0.split(path.sep);
-        let fs = obj.__GET_LIB("fs");
+        let fs = base.getLib("fs");
         for (let i = 1; i < parts.length; i++) {
           let local_path = "";
           for (let j = 1; j <= i; j++) {
@@ -301,11 +227,11 @@ let _live_lib_base = function () {
           }
         }
       } catch (err) {
-        throw err;
+        base.__CORE_ERROR(3, err);
       }
     };
 
-    obj.createRandomString = function (length, chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", e) {
+    base.createRandomString = function (length, chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", e) {
       try {
         if (length > 0 && chars && (typeof chars === "string" || chars instanceof String) && chars.length > 0) {
           let text = "";
@@ -315,23 +241,17 @@ let _live_lib_base = function () {
         }
       } catch (err) {
         if (e) throw err;
-        else obj.getLogger().errorm("Base", "createRandomString: ", err);
+        else base.getLogger().errorm("Base", "createRandomString: ", err);
       }
       return false;
     };
-
-    obj.init = true;
-
-    obj.postInitFunc(err => {
-      obj.__CORE_ERROR(319, err);
-    });
 
     function ___prout(...args) {
       (console._log ? console._log : console.log)(...args);
     }
 
     process.on("exit", code => {
-      if (code !== 0) obj.__CORE_ERROR(code, "EXIT ERROR");
+      if (code !== 0) base.__CORE_ERROR(code, "EXIT ERROR");
       process.exit(0);
     });
 
@@ -388,13 +308,9 @@ let _live_lib_base = function () {
       process.exit(0);
     });
 
-    return obj;
+    return base;
   } catch (err) {
-    if (console._log) {
-      console.log = console._log;
-      console._log = undefined;
-    }
-    console.log(err);
+    global.LiveLib.base.__CORE_ERROR(4, err);
   }
 };
 

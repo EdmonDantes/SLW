@@ -1,4 +1,24 @@
-var live_lib_user_engine = function (settings) {//TODO: Edit with new version
+let live_lib_userEngine = function (settings) {//TODO: Edit with new version
+  if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
+  if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
+  global.LiveLib.loadLiveModule("logging");
+  let database = global.LiveLib.loadLiveModule("database");
+
+
+  global.LiveLib.userEngine = function () {
+  };
+
+
+
+
+
+
+
+
+
+
+
+
   if (!global.LiveLib) require("./live_lib_base")();
   if (!global.LiveLib.db || !global.LiveLib.db.init) require("./live_lib_database")(settings);
   if (!global.LiveLib.userEngine || !global.LiveLib.userEngine.init) {

@@ -1,12 +1,12 @@
 let live_lib_logging = function (name) {
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
-  if (!global.LiveLib || global.LiveLib.Version < 1.1) return false;
+  if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
 
   let base = global.LiveLib.base;
-  let arguments = global.LiveLib.____LOAD_LIVE_MODULE("arguments");
+  let arguments = global.LiveLib.loadLiveModule("arguments");
 
 
-  let obj = global.LiveLib.____CREATE_MODULE("logging");
+  let obj = global.LiveLib.logging = {};
   obj.__ESC = "\x1b[";
 
   //Style class
@@ -43,7 +43,7 @@ let live_lib_logging = function (name) {
     } catch (err) {
       if (e) throw err;
       else {
-        base.__CORE_ERROR(3, err);
+        base.__CORE_ERROR(8, err);
       }
     }
     return null;
@@ -99,7 +99,7 @@ let live_lib_logging = function (name) {
     } catch (err) {
       if (e) throw err;
       else {
-        base.__CORE_ERROR(4, err);
+        base.__CORE_ERROR(9, err);
       }
     }
     return null;
@@ -167,7 +167,7 @@ let live_lib_logging = function (name) {
       else return new obj.Style(null, color_or_r, null);
     } catch (err) {
       if (e) throw err;
-      else base.__CORE_ERROR(5, err);
+      else base.__CORE_ERROR(10, err);
     }
     return null;
   };
@@ -179,7 +179,7 @@ let live_lib_logging = function (name) {
       else return new obj.Style(null, null, color_or_r);
     } catch (err) {
       if (e) throw err;
-      else base.__CORE_ERROR(6, err);
+      else base.__CORE_ERROR(11, err);
     }
     return null;
   };
@@ -194,7 +194,7 @@ let live_lib_logging = function (name) {
       return [r, g, b];
     } catch (err) {
       if (e) throw err;
-      else base.__CORE_ERROR(7, err);
+      else base.__CORE_ERROR(12, err);
     }
     return false;
   };
@@ -207,7 +207,7 @@ let live_lib_logging = function (name) {
       }
     } catch (err) {
       if (e) throw err;
-      else base.__CORE_ERROR(8, err);
+      else base.__CORE_ERROR(13, err);
     }
     return null;
   };
@@ -220,7 +220,7 @@ let live_lib_logging = function (name) {
       }
     } catch (err) {
       if (e) throw err;
-      else base.__CORE_ERROR(9, err);
+      else base.__CORE_ERROR(14, err);
     }
     return null;
   };
@@ -352,7 +352,7 @@ let live_lib_logging = function (name) {
           text += obj ? "true" : "false";
         } else if (typeof obj === "object" || obj instanceof Object) {
           if (this.objectFormat.colors) text += new Style(0).get();
-          text += base.__GET_LIB("util").inspect(obj, this.objectFormat);
+          text += base.getLib("util").inspect(obj, this.objectFormat);
           if (this.objectFormat.colors)
             for (let tmp of styles) {
               text += tmp.get();
@@ -428,7 +428,7 @@ let live_lib_logging = function (name) {
       }
     } catch (err) {
       if (e) throw err;
-      else base.__CORE_ERROR(10, err);
+      else base.__CORE_ERROR(15, err);
     }
   };
 
@@ -520,9 +520,7 @@ let live_lib_logging = function (name) {
 
     }
   }
-  obj.init = true;
-  obj.postInitFunc(() => {
-  });
+
   return obj;
 };
 
