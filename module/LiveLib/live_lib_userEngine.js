@@ -17,6 +17,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       {name: "login", type: "VARCHAR(80)", unique: true, notnull: true}, // Логин для входа в профиль
       {name: "password", type: "VARCHAR(120) BINARY", notnull: true}, // Пароль в зашифрованном виде
       {name: "passwordSalt", type: "VARCHAR(29) BINARY", notnull: true}, // Соль пароля
+      {name: "email", type: "VARCHAR(120)", notnull: true},
       {name: "firstName", type: "VARCHAR(120) BINARY", notnull: true}, // Имя
       {name: "lastName", type: "VARCHAR(120) BINARY", notnull: true}, // Фамилия
       {name: "secondName", type: "VARCHAR(120) BINARY", notnull: true, default: ""}, // Отчество
@@ -28,13 +29,38 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       {name: "country", type: "VARCHAR(80) BINARY", notnull: true, default: ""}, // Страна
       {name: "photo_id", type: "INT UNSIGNED", foreign: {table: "photo_engine", key: "id"}}, // Id фотографии
       {name: "mobile_phone", type: "VARCHAR(12)", notnull: true, default: ""}, // Мобильный телефон
-      {name: "home_phone", type: "VARCHAR(12)", notnull: true, default: ""},
-      {name: "site", type: "VARCHAR(60) BINARY", notnull: true, default: ""},
-      {name: "status", type: "VARCHAR(255) BINARY", notnull: true, default: ""},
-      {name: "verified", type: "CHAR(0)"},
+      {name: "home_phone", type: "VARCHAR(12)", notnull: true, default: ""}, // Домашний телефон
+      {name: "site", type: "VARCHAR(60) BINARY", notnull: true, default: ""}, // Сайт
+      {name: "status", type: "VARCHAR(255) BINARY", notnull: true, default: ""}, // Статус
+      {name: "verified", type: "CHAR(0)"}, // Верифицирован ли аккаунт
       err => {
         global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
       });
+      this.db.createTable("not_users",
+      {name: "id", type: "INT UNSIGNED", primary: true, autoincrement: true}, // ID
+      {name: "word_key", type: "VARCHAR(12) BINARY", unique: true, notnull: true},
+      {name: "login", type: "VARCHAR(80)", unique: true, notnull: true}, // Логин для входа в профиль
+      {name: "password", type: "VARCHAR(120) BINARY", notnull: true}, // Пароль в зашифрованном виде
+      {name: "passwordSalt", type: "VARCHAR(29) BINARY", notnull: true}, // Соль пароля
+      {name: "email", type: "VARCHAR(120)", notnull: true},
+      {name: "firstName", type: "VARCHAR(120) BINARY", notnull: true}, // Имя
+      {name: "lastName", type: "VARCHAR(120) BINARY", notnull: true}, // Фамилия
+      {name: "secondName", type: "VARCHAR(120) BINARY", notnull: true, default: ""}, // Отчество
+      {name: "sex", type: "CHAR(0)"}, // Пол
+      {name: "screen_name", type: "VARCHAR(120) BINARY", notnull: true, default: ""}, // Ссылка на профиль
+      {name: "bdate", type: "VARCHAR(10) BINARY", notnull: true, default: ""}, // День рождения
+      {name: "closed", type: "CHAR(0)"}, // Закрытый ли аккаунт
+      {name: "city", type: "VARCHAR(60) BINARY", notnull: true, default: ""}, // Город
+      {name: "country", type: "VARCHAR(80) BINARY", notnull: true, default: ""}, // Страна
+      {name: "photo_id", type: "INT UNSIGNED", foreign: {table: "photo_engine", key: "id"}}, // Id фотографии
+      {name: "mobile_phone", type: "VARCHAR(12)", notnull: true, default: ""}, // Мобильный телефон
+      {name: "home_phone", type: "VARCHAR(12)", notnull: true, default: ""}, // Домашний телефон
+      {name: "site", type: "VARCHAR(60) BINARY", notnull: true, default: ""}, // Сайт
+      {name: "status", type: "VARCHAR(255) BINARY", notnull: true, default: ""}, // Статус
+      {name: "verified", type: "CHAR(0)"},
+	  err => {
+		global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err); 
+	  });
   };
 
   let users = global.LiveLib.userEngine;
@@ -65,28 +91,39 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     }
     return false;
   }
-
-  users.prototype.registerUser = function (login, password, firstName, lastName, sex, screen_name, bdate, closed, city, country, photo_id, mobile_phone, home_phone, site, status, verified) {
-    if (login && password && firstName && lastName && sex) {
-
-    }
-  };
-
-  global.LiveLib.userEngine.__createPasswordHash = function (string, callback) {
-    try {
-      global.LiveLib.__GET_LIB("bcrypt").genSalt(5, (err, salt) => {
-        if (err) callback(err);
-        else {
-          global.LiveLib.__GET_LIB("bcrypt").hash(string, salt, (err0, hash) => {
-            if (err) callback(err0);
-            else callback(null, hash, salt);
-          });
-        }
-      });
-    } catch (err) {
-      callback(err);
-    }
+  
+  users.prototype.sendTo(email, string){
+	  
   }
+
+  users.prototype.registerUser = function (login, password, email, firstName, lastName, sex, screen_name, bdate, closed, city, country, photo_id, mobile_phone, home_phone, site, status, verified) {
+    if (login && password && firstName && lastName && sex) {
+		let word = base.createRandomString(12);
+		this.db.insert("not_users", {
+			word_key: word,
+			login: login,
+			password: password,
+			email: email,
+			firstName: firstName,
+			lastName: lastName,
+			sex: sex,
+			screen_name: screen_name,
+			bdate: bdate,
+			closed: closed,
+			city: city,
+			country: country,
+			photo_id: photo_id,
+			mobile_phone: mobile_phone,
+			home_phone: home_phone,
+			site: site,
+			status: status,
+			verified: verified
+		});
+		this.sendTo(email, word);
+    }else return false;
+  };
+  
+  users.prototype.
 
   global.LiveLib.userEngine.chechLogin = function (login, callback) {
     global.LiveLib.db.select("users", undefined, "login = '" + login + "'", undefined, 1, undefined, undefined, (err, res) => {
