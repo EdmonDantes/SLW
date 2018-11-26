@@ -1,68 +1,76 @@
 let live_lib_userEngine = function (settings) {//TODO: Edit with new version
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
   if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
+
+  let base = global.LiveLib.base;
   global.LiveLib.loadLiveModule("logging");
-  let database = global.LiveLib.loadLiveModule("database");
+  let Database = global.LiveLib.loadLiveModule("database");
+  let PhotoEngine = global.LiveLib.loadLiveModule("photoEngine");
+  let bcrypt = base.getLib("bcrypt");
 
 
-  global.LiveLib.userEngine = function () {
+  global.LiveLib.userEngine = function (folder, host, user, password, database, port, count_pools = 20) {
+    this.photoEng = new PhotoEngine(folder, host, user, password, database, port, count_pools);
+    this.db = new Database(host, user, password, database, port, count_pools);
+    this.db.createTable("users",
+      {name: "id", type: "INT UNSIGNED", primary: true, autoincrement: true}, // ID
+      {name: "login", type: "VARCHAR(80)", unique: true, notnull: true}, // Логин для входа в профиль
+      {name: "password", type: "VARCHAR(120) BINARY", notnull: true}, // Пароль в зашифрованном виде
+      {name: "passwordSalt", type: "VARCHAR(29) BINARY", notnull: true}, // Соль пароля
+      {name: "firstName", type: "VARCHAR(120) BINARY", notnull: true}, // Имя
+      {name: "lastName", type: "VARCHAR(120) BINARY", notnull: true}, // Фамилия
+      {name: "secondName", type: "VARCHAR(120) BINARY", notnull: true, default: ""}, // Отчество
+      {name: "sex", type: "CHAR(0)"}, // Пол
+      {name: "screen_name", type: "VARCHAR(120) BINARY", notnull: true, default: ""}, // Ссылка на профиль
+      {name: "bdate", type: "VARCHAR(10) BINARY", notnull: true, default: ""}, // День рождения
+      {name: "closed", type: "CHAR(0)"}, // Закрытый ли аккаунт
+      {name: "city", type: "VARCHAR(60) BINARY", notnull: true, default: ""}, // Город
+      {name: "country", type: "VARCHAR(80) BINARY", notnull: true, default: ""}, // Страна
+      {name: "photo_id", type: "INT UNSIGNED", foreign: {table: "photo_engine", key: "id"}}, // Id фотографии
+      {name: "mobile_phone", type: "VARCHAR(12)", notnull: true, default: ""}, // Мобильный телефон
+      {name: "home_phone", type: "VARCHAR(12)", notnull: true, default: ""},
+      {name: "site", type: "VARCHAR(60) BINARY", notnull: true, default: ""},
+      {name: "status", type: "VARCHAR(255) BINARY", notnull: true, default: ""},
+      {name: "verified", type: "CHAR(0)"},
+      err => {
+        global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+      });
   };
 
+  let users = global.LiveLib.userEngine;
 
+  createClass(users);
 
-
-
-
-
-
-
-
-
-
-  if (!global.LiveLib) require("./live_lib_base")();
-  if (!global.LiveLib.db || !global.LiveLib.db.init) require("./live_lib_database")(settings);
-  if (!global.LiveLib.userEngine || !global.LiveLib.userEngine.init) {
-    global.LiveLib.userEngine = {
-      init: true,
-      loaded: false,
-      Version: "1.0",
-    }
-  }
-
-  new Promise((resolve, reject) => {
-    global.LiveLib.db.changeDB("user_engine", undefined, (err) => {
-      if (err) reject(err);
-      else {
-        global.LiveLib.db.createTable("users",
-          {name: "id", type: "UNSIGNED INT", primary: true, autoincrement: true},
-          {name: "login", type: "VARCHAR(80)", unique: true, notnull: true},
-          {name: "password", type: "VARCHAR(120) BINARY", notnull: true},
-          {name: "password_salt", type: "VARCHAR(29) BINARY", notnull: true}, (err) => {
-            if (err) reject(err);
+  function getPasswordForDB(password, callback, countSalt = 10) {
+    try {
+      bcrypt.getSalt(countSalt, (err, salt) => {
+        if (err) {
+          if (callback) callback(err);
+        }
+        else {
+          bcrypt.hash(string, salt, (err0, hash) => {
+            if (err0) {
+              if (callback) callback(err0);
+            }
             else {
-              global.LiveLib.db.createTable("tokens",
-                {name: "token", type: "VARCHAR(80) BINARY", primary: true, notnull: true},
-                {name: "type_token", type: "CHAR(0)"},
-                {name: "id", type: "UNSIGNED INT", foreign: {table: "users", key: "id"}},
-                {name: "time", type: "UNSIGNED INT", default: "8000000"},
-                {name: "last_using", type: "UNSIGNED INT", notnull: true, default: "UNIX_TIMESTAMP()"}, (err) => {
-                  if (err) reject(err);
-                  else resolve(true);
-                });
+              callback(null, hash, salt);
             }
           });
-      }
-    });
-  });
-
-  global.LiveLib.userEngine.UserError = function (code, message) {
-    this.name = "UserError";
-    this.message = message;
-    this.code = code || 1;
-    this.stack = (new Error()).stack;
+        }
+      });
+      return true;
+    } catch (err) {
+      if (callback) callback(err);
+      else throw err;
+    }
+    return false;
   }
 
-  global.LiveLib.createClass(global.LiveLib.userEngine.UserError, Error);
+  users.prototype.registerUser = function (login, password, firstName, lastName, sex, screen_name, bdate, closed, city, country, photo_id, mobile_phone, home_phone, site, status, verified) {
+    if (login && password && firstName && lastName && sex) {
+
+    }
+  };
 
   global.LiveLib.userEngine.__createPasswordHash = function (string, callback) {
     try {
