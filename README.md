@@ -42,7 +42,7 @@ Standard class for all classes in this library.
 * ```getArg(arg (string), default_value (object))``` - return value process' argument after arg if process' arguments have arg else return default_value
 ## Logging
 ### Methods after load
-* ```getLogger()``` - return object from logging information.
+* ```LiveLib.getLogger()``` - return object from logging information.
 ### Classes
 #### 1. Style
 Class for set style in command line  
@@ -103,6 +103,52 @@ Class for logging information
 * ```warn(...)``` - logging information with warn`s level
 * ```error(...)``` - logging information with error`s level
 * ```fatal(...)``` - logging information with fatal`s level
+
+
+## Database
+### Using
+
+``
+var db = new LiveLib.database(host, user, password[, port, database, count_pools, callback, throw_error, handler_end, handler_connect]);
+``
+
+*or*
+
+``
+var db = new LiveLib.database();  
+db.connectTo(host, user, password[, port, database, count_pools, callback, throw_error, handler_end, handler_connect]);
+``
+### Methods
+* ```isLoad()``` - return true if library loaded
+* ```createRequest(request, ...args)``` - send request to MySQL.
+* ```changeDB(database[,callback])``` - changing database.
+* ```deleteDB(database[,callback])``` - drop database.
+* ```createTable(table_name, ...args)``` - create table with need properties. In args you can use string or special object.
+* * *Special Object*
+* * * `name` - string. Set name of column.
+* * * `type` - string. Set type of column.
+* * * `autoincrement` - bool. Set auto increment property.
+* * * `notnull` - bool. Set not null property.
+* * * `default` - string. Set default value of column.
+* * * `unique` - bool. Set unique property.
+* * * `primary` - bool. Set primary property.
+* * * `foreign` - object. Set foreign property.
+* * * * `table` - string.
+* * * * `key` - string.
+* ```deleteTable(table[,callback])``` - drop table.
+* ```insert(table, ...args)``` - Insert data to table. In args you can use two consecutive arrays of object.
+* ```select(table, settings, callback)``` - Select data from table.
+* * *Settings*
+* * * `filters` - string or string`s array. Set filter. Default: `"*"`.
+* * * `where` - string or string`s array. Set conditional.
+* * * `groupBy` - string or string`s array. Set group by property.
+* * * `having` - string. Set having property.
+* * * `limit` - string ot number. Set limit.
+* * * `offset` - string or number. Need `limit`. Set offset.
+* ```update(table, ...args)``` - update data in table. In args you can use two consecutive arrays of object.
+## Classes
+### SQLError
+This class return from database if MySQL return error. You can get `code` error and `message` error.
 
 OLD VERSION //TODO: закончить документацию
 ## Database
