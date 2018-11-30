@@ -18,11 +18,6 @@ let live_lib_locale = function () {
   let locale = global.LiveLib.locale;
   base.createClass(locale);
 
-  locale.LocaleString = function (string, locale) {
-    this.string = string;
-    this.locale = locale;
-  };
-
   locale.prototype.loadLocaleFromFile = function (locale, callback, e) {
     try {
       let map = this.locales;
@@ -55,18 +50,20 @@ let live_lib_locale = function () {
     }
   };
 
-  locale.prototype.get = function (string, callback, e) {
+  locale.prototype.get = function (string, locale, callback, e) {
     try {
       let tmp0 = this;
 
       function result(local) {
-        let tmp = local.get(string.string, null, true);
-        callback(null, tmp ? tmp : tmp0.locales.get("en-US").get(string.string, string.string, true));
+        let tmp = local.get(string, null, true);
+        if (tmp) callback(null, tmp);
+        else if (locale !== "en-US") tmp0.get(string, "en-US", callback, true);
+        else callback(null, string);
       }
 
-      let local = this.locales.get(string.locale);
+      let local = this.locales.get(locale);
       if (!local) {
-        this.loadLocaleFromFile(string.locale, (err, res) => {
+        this.loadLocaleFromFile(locale, (err, res) => {
           if (err) callback(err);
           local = res;
           result(local);
@@ -81,15 +78,15 @@ let live_lib_locale = function () {
     return false;
   };
 
-  locale.prototype.getSync = function (string, e) {
+  locale.prototype.getSync = function (string, locale, e) {
     try {
-      let local = this.locales.get(string.locale);
+      let local = this.locales.get(locale);
       if (!local) {
-        this.loadLocaleFromFileSync(string.locale, true);
-        local = this.locales.get(string.locale);
+        this.loadLocaleFromFileSync(locale, true);
+        local = this.locales.get(locale);
       }
-      let tmp = local.get(string.string, null, true);
-      return tmp ? tmp : this.locales.get("en-US").get(string.string, "Locale Error #1!!!!", true);
+      let tmp = local.get(string, null, true);
+      return tmp ? tmp : (local !== "en-US" ? this.getSync(string, "en-US", true) : string);
     } catch (err) {
       if (e) throw err;
       else logger.errorm("Locale", "get => ", err);

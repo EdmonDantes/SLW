@@ -25,7 +25,8 @@ let live_lib_database = function (settings) {
       this.name = "SQLError";
       this.message = message || "Unknowns error in sql";
       this.code = code || -1;
-      this.stack = (new Error()).stack;
+      Error.captureStackTrace(this, this.constructor);
+      //this.stack = (new Error()).stack;
     };
 
     base.createClass(db.SQLError, Error);
@@ -52,20 +53,24 @@ let live_lib_database = function (settings) {
       if (!errors && callback) callback();
     };
 
-    db.prototype.connectTo = function (host, user, password, port, database, pools, callback, e, handler_end, handler_connect) {
+    db.prototype.connectTo = function (host, user, password, port, database, pools, callback, e, handler_end = err => {
+      if (err) global.LiveLib.getLogger().errorm("Database", "[[construstor]] => ", err)
+    }, handler_connect = err => {
+      if (err) global.LiveLib.getLogger().errorm("Database", "[[construstor]] => ", err)
+    }) {
       try {
         this.stackOfActions = [];
         this.connect = false;
         this.usePool = !!pools;
 
         if (this.connection) this.connection.end(handler_end);
-
-        this.connection = base.getLib("mysql").createConnection({
+        let con_obj = {
           host: host,
           port: port,
           user: user,
           password: password
-        });
+        };
+        this.connection = base.getLib("mysql").createConnection(con_obj);
 
         this.connection.connect(handler_connect);
 
@@ -102,16 +107,7 @@ let live_lib_database = function (settings) {
               }
             }
           });
-        } else if (this.usePool) {
-          this.connection.end(handler_end);
-          this.connection = base.get_LIB("mysql").createConnection({
-            host: host,
-            port: port,
-            user: user,
-            password: password,
-            database: database,
-            connectionLimit: pools
-          });
+        } else {
           this.postInitFunc(err0 => {
             if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "Database => createConnection - ", err0);
           });
@@ -141,7 +137,7 @@ let live_lib_database = function (settings) {
           global.LiveLib.getLogger().tracem("Database", "createRequest => request: \"", request, "\"; args: ", args);
           this.connection.query(request, args ? args.splice(0, index) : [], (err, res, filds) => {
             if (err) {
-              if (callback) callback(new obj.SQLError(err.errno, err.sqlMessage));
+              if (callback) callback(new db.SQLError(err.errno, err.sqlMessage));
               else global.LiveLib.getLogger().errorm("Database", "createRequest => Request Error: ", err);
             } else if (callback) callback(null, res, filds);
           });
@@ -210,20 +206,28 @@ let live_lib_database = function (settings) {
           } else {
             req += tmp.name + " " + tmp.type;
 
-            if (tmp.autoincrement) {
+            if (tmp.autoincrement)
               req += " AUTO_INCREMENT";
-            }
-            if (tmp.notnull) {
+
+            if (tmp.notnull)
               req += " NOT NULL";
-            }
-            if (tmp.default) {
+
+            if (tmp.default)
               req += " DEFAULT " + tmp.default;
-            }
-            if (tmp.unique) {
+
+            if (tmp.unique && !tmp.unique.length)
               req += " UNIQUE";
-            }
 
             req += ",";
+
+            if (tmp.unique && tmp.unique.length > 0) {
+              let tmp0 = "";
+              for (let obj of tmp.unique) {
+                tmp0 += obj + ",";
+              }
+              tmp0 += tmp.name;
+              req += "UNIQUE (" + tmp0 + "),";
+            }
 
             if (tmp.primary) {
               req += "PRIMARY KEY(" + tmp.name + "),";
@@ -439,7 +443,7 @@ let live_lib_database = function (settings) {
                 }
 
                 promises.push(new Promise(resolve => {
-                  this.createRequest(req + ";", err => {
+                  this.createRequest(req + ";", (err, res) => {
                     if (err) errors[i] = err;
                     else returns[i] = res;
                     resolve();
