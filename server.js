@@ -25,8 +25,15 @@
 require("./module/live_lib")("userEngine");
 
 let users = new LiveLib.userEngine("./users", "localhost", "root", "1111qazwsxqweasd", "testApi");
-users.getUser(1, "gUaK8VekHQY5tajaSip4EZ2G20haSLK5abNN7unQ0S8NqSckl79vtgOceuKB", console.log);
-// users.registerUser({login: "test2", password: "1234", firstName: "fisrt", lastName: "last", sex: "man"}, (err, message, res) => {
+
+let token1 = "BzKuUbTr7qQsv50bSvv4K0aorUTqs8Of5HZynK9xwrzIIQ19MQYGGKrhZ2oH";
+let token2 = "gUaK8VekHQY5tajaSip4EZ2G20haSLK5abNN7unQ0S8NqSckl79vtgOceuKB";
+
+//users.accountBan(2, token, console.log);
+//users.accountBan(1, token2, console.log);
+//users.accountGet(1, token2, console.log);
+users.accountChangePassword("1234", "00001111222233334444", token2, console.log);
+// users.registerUser({login: "test2", password: "1234", firstName: "first", lastName: "last", sex: "man"}, (err, message, res) => {
 //   console.log(message, res);
 //   users.createToken(1, -1, -1, (err, message, res) => {
 //     console.log(err, message, res);

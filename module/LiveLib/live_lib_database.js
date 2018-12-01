@@ -429,7 +429,10 @@ let live_lib_database = function (settings) {
               for (let [key, value] of Object.entries(args[i])) {
                 if (key.toUpperCase() === "$$WHERE") where.push(value);
                 else if (value !== undefined && value != null) {
-                  req += key + " = \"" + value + "\", ";
+                  if (typeof value === "number" || value instanceof Number) {
+                    req += key + " = " + value + ",";
+                  }
+                  else req += key + " = '" + value + "', ";
                 }
               }
               let tmp0 = req.lastIndexOf(",");

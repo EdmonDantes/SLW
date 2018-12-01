@@ -43,8 +43,14 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
           {name: "user_id_1", type: "INT UNSIGNED", notnull: true},
           {name: "user_id_2", type: "INT UNSIGNED", notnull: true, unique: ["user_id_1"]},
           {name: "status", type: "BIT(3)", notnull: true, default: "b'01'"},
-          // 000 - друзья, 001 - user_id_1 отправил запрос на дружбу, 010 - user_id_2 отправил запрос на дружбу, 011 - Нейтральные отношения,
-          // 100 - user_id_1 добавил в чёрный список, 101 - used_id_2 добавил в чёрный список, 110 - оба добавили друг друга в чёрные списки, 111 - пустое состояние
+          // 0 - друзья
+          // 1 - user_id_1 отправил запрос на дружбу
+          // 2 - user_id_2 отправил запрос на дружбу
+          // 3 - Нейтральные отношения
+          // 4 - user_id_1 добавил в чёрный список
+          // 5 - used_id_2 добавил в чёрный список
+          // 6 - оба добавили друг друга в чёрные списки
+          // 7 - пустое состояние
           err => {
             if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
           });
@@ -68,6 +74,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
           err => {
             if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
           });
+
       });
     };
 
@@ -76,11 +83,18 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     base.createClass(users);
 
     users.ALL_PERM = 0xffffffff;
-    users.BASE = 2;
+    users.NOT_WRITE_ACTION = -1;
+    users.NOT_PERMISSION = 0;
+    users.SALT_LENGTH = 10;
 
-    let act = users.ACTIONS_TYPES = new Map();
-    act.set("user.getById", 1);
-    act.set("user.getRelations", 2);
+    let types_actions = users.TYPES_ACTIONS = new Map();
+    types_actions.set("account.ban", 1);
+    types_actions.set("account.get", 2);
+    types_actions.set("account.changePassword", 3);
+    //types_actions.set("account.getBanned", 4);
+
+    let permissions = users.PERMISSIONS = new Map();
+    permissions.set("account", 0);
 
     users.prototype.createToken = function (user_id, permissions, time, callback) {
       let token = base.createRandomString(60);
@@ -105,7 +119,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       try {
         if (user && user.login && user.password && user.firstName && user.lastName) {
           let that = this;
-          bcrypt.genSalt(10, (err, salt) => {
+          bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
             if (err) {
               if (callback) callback(err);
             }
@@ -157,7 +171,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
             }
             else {
               let obj = res[0];
-              bcrypt.hash(password, obj.salt, (err0, res0) => {
+              bcrypt.hash(password, obj.passwordSalt, (err0, res0) => {
                 if (err0) {
                   if (callback) callback(err, "users.serverError");
                 }
@@ -203,7 +217,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                   }
 
                   try {
-                    callback(res0[0], func);
+                    callback(res0[0], func, db);
                   } catch (err0) {
                     if (handler) handler(err0, "users.wrong.action");
                     func(false);
@@ -223,19 +237,16 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     };
 
     users.prototype.getRelationsWith = function (user_id_1, token, callback) {
-      let db = this.db;
-      this.createAction(token, act.get("user.getRelations"), users.BASE, (err, message) => {
-        callback(err, message);
-      }, (user, func) => {
-        db.select("relations", {where: user_id_1 < user.id ? "user_id_1 = " + user_id_1 + " AND user_id_2 = " + user.id : "user_id_1 = " + user.id + " AND user_id_2 = " + user_id_1}, (err0, res0) => {
+      this.createAction(token, users.NOT_WRITE_ACTION, users.NOT_PERMISSION, callback, (user, func, db) => {
+        db.select("relations", {where: "user_id_1 = " + Math.min(user_id_1, user.id) + " AND user_id_2 = " + Math.max(user_id_1, user.id)}, (err0, res0) => {
           if (err0) {
             callback(err0, "users.not.find");
             func(false);
           }
           else {
             let res = "none";
-            if (res0 && res0.length > 0 && res[0]) {
-              switch (res0[0].status) {
+            if (res0 && res0.length > 0 && res0[0]) {
+              switch (res0[0].status[0]) {
                 case 0:
                   res = "friend";
                   break;
@@ -250,18 +261,112 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
               }
             }
             callback(undefined, undefined, res);
-            func(true);
           }
         });
       });
     };
 
-    users.prototype.getUser = function (user_id, token, callback) {
+    users.prototype.accountBan = function (user_id, token, callback) {
+      this.createAction(token, types_actions.get("account.ban"), permissions.get("account"), callback, (user, func, db) => {
+        if (user.id == user_id) {
+          callback(undefined, "users.can.not.black");
+          func(false);
+        } else {
+          db.select("relations", {where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)}, (err0, res0) => {
+            if (err0) {
+              callback(err0, "users.not.find");
+              func(false);
+            } else {
+              if (res0 && res0.length > 0 && res0[0]) {
+                let rel = res0[0].status[0];
+                if ((user_id < user.id && rel === 4) || (user.id < user_id && rel[0] === 5)) {
+                  db.update("relations", {
+                    status: 6,
+                    "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
+                  }, err1 => {
+                    if (err1) {
+                      callback(err1, "users.serverError");
+                      func(false);
+                    } else func(true);
+                  });
+                } else {
+                  db.update("relations", {
+                    status: user_id < user.id ? 5 : 4,
+                    "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
+                  }, err1 => {
+                    if (err1) {
+                      callback(err1, "users.serverError");
+                      func(false);
+                    } else func(true);
+                  });
+                }
+              } else {
+                db.insert("relations", {
+                  user_id_1: Math.min(user.id, user_id),
+                  user_id_2: Math.max(user.id, user_id),
+                  status: user_id < user.id ? 5 : 4
+                }, err1 => {
+                  if (err1) {
+                    callback(err1, "users.serverError");
+                    func(false);
+                  } else func(true);
+                });
+              }
+            }
+          });
+        }
+      });
+    };
+
+    users.prototype.accountChangePassword = function (old_password, new_password, token, callback) {
+      this.createAction(token, types_actions.get("account.changePassword"), permissions.get("account"), callback, (user, func, db) => {
+        bcrypt.hash(old_password, user.passwordSalt, (err, res) => {
+          if (err) {
+            callback(err, "users.serverError");
+            func(false);
+          }
+          else if (user.password === res) {
+            bcrypt.genSalt(users.SALT_LENGTH, (err0, salt) => {
+              if (err0) {
+                callback(err0, "users.serverError");
+                func(false);
+              }
+              else {
+                bcrypt.hash(new_password, salt, (err1, hash) => {
+                  if (err1) {
+                    callback(err1, "users.serverError");
+                    func(false);
+                  }
+                  else {
+                    db.update("users", {password: hash, passwordSalt: salt, "$$where": "id = " + user.id}, err2 => {
+                      if (err1) {
+                        callback(err2, "users.serverError");
+                        func(false);
+                      } else {
+                        callback(undefined, undefined, true);
+                        func(true);
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          } else {
+            callback(undefined, "users.wrong.password");
+            func(false);
+          }
+        });
+      });
+    };
+
+    users.prototype.accountGetBanned = function (token, callback) {
+
+    };
+
+    users.prototype.accountGet = function (user_id, token, callback) {
       let that = this;
-      this.createAction(token, act.get("user.getById"), users.BASE, (err, message) => {
-        callback(err, message);
-      }, function (user, func) {
-        that.db.select("users", {where: "id = " + user_id}, (err0, res0) => {
+      this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, db) => {
+        db.select("users", {where: "id = " + user_id}, (err0, res0) => {
           if (err0 || !res0 || res0.length < 1 || !res0[0]) {
             callback(err0, "users.not.find");
             func(false);
