@@ -344,10 +344,7 @@ let live_lib_database = function (settings) {
 
         if (settings && settings.where) {
           if (settings.where instanceof Array && settings.where.length > 0) {
-            req += " WHERE " + settings.where[0];
-            for (let i = 1; i < settings.where.length; i++) {
-              req += "," + settings.where[i];
-            }
+            req += " WHERE " + settings.where.join("");
           } else if (typeof settings.where === "string" || settings.where instanceof String) {
             req += " WHERE " + settings.where;
           }
@@ -396,20 +393,22 @@ let live_lib_database = function (settings) {
           for (let i = 0; i < l; i++) {
             if (args[i] instanceof Array && i + 1 < l && args[i + 1] instanceof Array && args[i].length > 0 && args[i + 1].length > 0) {
               let req = "UPDATE " + table + " SET ";
-              let where = [];
+              let where;
 
               for (let j = 0; j < args[i] && j < args[i + 1]; j++) {
-                if (args[i][j].toUpperCase() === "$$WHERE") where.push(args[i + 1][j]);
+                if (args[i][j].toUpperCase() === "$$WHERE") where = args[i + 1][j];
                 else {
                   req += args[i][j] + " = \"" + args[i + 1][j] + "\",";
                 }
               }
 
               req = req.substr(0, req.length - 1);
-              if (where.length > 0) {
-                req += " WHERE " + where[0];
-                for (let j = 1; j < where.length; j++) {
-                  req += "," + where[j];
+              if (where) {
+                req += " WHERE ";
+                if (where instanceof Array) {
+                  req += where.join("");
+                } else if (typeof where === "string" || where instanceof String) {
+                  req += where;
                 }
               }
 
@@ -424,10 +423,9 @@ let live_lib_database = function (settings) {
               i++;
             } else if (args[i] instanceof Object) {
               let req = "UPDATE " + table + " SET ";
-              let where = [];
-
+              let where;
               for (let [key, value] of Object.entries(args[i])) {
-                if (key.toUpperCase() === "$$WHERE") where.push(value);
+                if (key.toUpperCase() === "$$WHERE") where = value;
                 else if (value !== undefined && value != null) {
                   if (typeof value === "number" || value instanceof Number) {
                     req += key + " = " + value + ",";
@@ -438,11 +436,13 @@ let live_lib_database = function (settings) {
               let tmp0 = req.lastIndexOf(",");
               if (tmp0 > -1) {
                 req = req.substr(0, tmp0);
-                if (where.length > 0) {
-                  req += " WHERE " + where[0];
-                  for (let j = 1; j < where.length; j++) {
-                    req += "," + where[j];
-                  }
+              }
+              if (where) {
+                req += " WHERE ";
+                if (where instanceof Array) {
+                  req += where.join("");
+                } else if (typeof where === "string" || where instanceof String) {
+                  req += where;
                 }
 
                 promises.push(new Promise(resolve => {

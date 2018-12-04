@@ -169,7 +169,7 @@ let live_lib_net = function (settings) {//TODO: Edit with new version
             }
             res.send(json);
           } else res.sendStatus(400);
-        }
+        };
 
         this.router.post(name, func);
         this.router.put(name, func);
