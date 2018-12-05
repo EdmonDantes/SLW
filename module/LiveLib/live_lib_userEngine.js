@@ -10,9 +10,9 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     let bcrypt = base.getLib("bcrypt");
 
 
-    global.LiveLib.userEngine = function (folder, host, user, password, database, port, count_pools = 20) {
+    global.LiveLib.userEngine = function (host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", port = null, count_pools = 20) {
       let db = this.db = new Database(host, user, password, port, database, port, count_pools);
-      this.photo = new PhotoEngine(folder, host, user, password, database, port, count_pools, () => {
+      this.photo = new PhotoEngine(photo_folder, host, user, password, database, port, count_pools, () => {
         this.db.createTable("users",
           {name: "id", type: "INT UNSIGNED", primary: true, autoincrement: true}, // ID
           {name: "login", type: "VARCHAR(80)", unique: true, notnull: true}, // Логин для входа в профиль
@@ -237,8 +237,8 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                 }
               } else if (handler) handler(err0, "users.not.find");
             });
-          }
-        }
+          } else if (handler) handler(undefined, "users.wrong.token");
+        } else if (handler) handler(undefined, "users.not.find");
       });
     };
 
@@ -327,7 +327,6 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     };
 
     users.prototype.accountGet = function (user_id, token, callback) {
-      let that = this;
       this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
         that.db.select("users", {where: "id = " + user_id}, (err0, res0) => {
           if (err0 || !res0 || res0.length < 1 || !res0[0]) {
@@ -372,6 +371,19 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
           }
         });
       });
+    };
+
+    users.prototype.accountGetSelf = function (token, callback) {
+      this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
+        that.db.select("users", {where: "id = " + user.id}, (err, res) => {
+          if (err || !res || res.length < 1 || !res[0]) {
+            callback(err, "users.not.find");
+          } else {
+            callback(undefined, undefined, res[0])
+          }
+          func(err);
+        });
+      })
     };
 
     users.prototype.accountChangePassword = function (old_password, new_password, token, callback) {
