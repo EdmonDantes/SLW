@@ -10,15 +10,9 @@ let live_lib_net = function (settings) {
   let express = base.getLib("express");
   let body_parser = base.getLib("body-parser");
   let fileupload = base.getLib("express-fileupload");
-  let querystring = base.getLib("querystring");
   let cookies_parser = base.getLib("cookie-parser");
   let os = base.getLib("os");
   let path = base.getLib("path");
-
-
-  function getArgs(req, name) {
-    return req && req.params && name && req.params[name] ? querystring.parse(req.params[name].substr(req.params[name].lastIndexOf("/") + 1), "&", "=") : {};
-  }
 
   function getLocalServerIP(e) {
     try {
@@ -63,8 +57,7 @@ let live_lib_net = function (settings) {
     try {
       if (name) {
         function __tmp(req, res, next) {
-          let args = getArgs(req, name.substr(name.lastIndexOf(":") + 1));
-          if (args && args.crossDomenRequest) {
+          if (req.query && req.query.crossDomenRequest) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
@@ -73,7 +66,8 @@ let live_lib_net = function (settings) {
             res: res,
             req: req,
             next: next,
-            args: args,
+            args: req.query,
+            params: req.params,
             cookies: req.cookies
           });
         }
@@ -96,8 +90,7 @@ let live_lib_net = function (settings) {
       if (name) {
 
         function __tmp(req, res, next) {
-          let args = getArgs(req, name.substr(name.lastIndexOf(":") + 1));
-          if ((args && args.crossDomenRequest) || (req.body && req.body.crossDomenRequest)) {
+          if ((req.query && req.query.crossDomenRequest) || (req.body && req.body.crossDomenRequest)) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
@@ -106,7 +99,8 @@ let live_lib_net = function (settings) {
             res: res,
             req: req,
             next: next,
-            args: args,
+            args: req.query,
+            params: req.params,
             body: req.body,
             files: req.files,
             cookies: req.cookies
@@ -131,8 +125,7 @@ let live_lib_net = function (settings) {
       if (name) {
 
         function __tmp(req, res, next) {
-          let args = getArgs(req, name.substr(name.lastIndexOf(":") + 1));
-          if ((args && args.crossDomenRequest) || (req.body && req.body.crossDomenRequest)) {
+          if ((req.query && req.query.crossDomenRequest) || (req.body && req.body.crossDomenRequest)) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
@@ -141,7 +134,8 @@ let live_lib_net = function (settings) {
             res: res,
             req: req,
             next: next,
-            args: args,
+            args: req.query,
+            params: req.params,
             body: req.body,
             files: req.files,
             cookies: req.cookies

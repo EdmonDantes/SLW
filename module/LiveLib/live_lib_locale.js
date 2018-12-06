@@ -61,7 +61,7 @@ let live_lib_locale = function () {
         else callback(null, string);
       }
 
-      let local = this.locales.get(locale);
+      let local = this.locales.get(locale ? locale : "en-US");
       if (!local) {
         this.loadLocaleFromFile(locale, (err, res) => {
           if (err) callback(err);
@@ -78,15 +78,16 @@ let live_lib_locale = function () {
     return false;
   };
 
-  locale.prototype.getSync = function (string, locale, e) {
+  locale.prototype.getSync = function (string, locale = "en-US", e) {
     try {
+      if (!locale) locale = "en-US";
       let local = this.locales.get(locale);
       if (!local) {
         this.loadLocaleFromFileSync(locale, true);
         local = this.locales.get(locale);
       }
       let tmp = local.get(string, null, true);
-      return tmp ? tmp : (local !== "en-US" ? this.getSync(string, "en-US", true) : string);
+      return tmp ? tmp : (locale !== "en-US" ? this.getSync(string, "en-US", true) : string);
     } catch (err) {
       if (e) throw err;
       else logger.errorm("Locale", "get => ", err);

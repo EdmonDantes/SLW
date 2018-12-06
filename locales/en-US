@@ -1,1 +1,20 @@
-error.message: This is error message for users!!!
+server.error: Server error // Error code: 1
+users.wrong.login:
+users.wrong.password:
+users.token.old:
+users.token.have.not.permissions:
+users.banned:
+users.deleted:
+users.not.find: This user wasn`t find
+users.wrong.token:
+users.can.not.status.self:
+users.deleted:
+users.banned:
+users.in.black:
+users.closed:
+users.can.not.add.friends.self:
+users.in.your.black:
+users.can.not.delete.friends.self:
+photo.wrong.format:
+photo.not.find:
+request.have.not.token: This request have not token. Please login or register.

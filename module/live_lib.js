@@ -21,6 +21,8 @@ let live_lib = async function (...args) {
         return require("./LiveLib/live_lib_photoEngine")(...args);
       case "locale":
         return require("./LiveLib/live_lib_locale")(...args);
+      case "engine":
+        return require("./LiveLib/live_lib_engine")(...args);
       default:
         return false;
     }

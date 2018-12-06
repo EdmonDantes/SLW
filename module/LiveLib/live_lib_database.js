@@ -26,7 +26,6 @@ let live_lib_database = function (settings) {
       this.message = message || "Unknowns error in sql";
       this.code = code || -1;
       Error.captureStackTrace(this, this.constructor);
-      //this.stack = (new Error()).stack;
     };
 
     base.createClass(db.SQLError, Error);

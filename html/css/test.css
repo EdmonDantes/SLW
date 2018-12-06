@@ -1,0 +1,17 @@
+.error_body {
+    background-color: #ffffff;
+}
+
+.error_form {
+    width: 50vw;
+    height: 20vh;
+    margin-top: 25vh;
+    margin-left: 25vw;
+    border: 3px solid #ee9528;
+    border-radius: 8px;
+}
+
+.error_text {
+    text-align: left;
+    font-size: medium;
+}

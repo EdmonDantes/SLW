@@ -1,0 +1,14 @@
+doctype html
+
+html
+    head
+        style
+            include css/test.css
+    body(class='error_body')
+        div(class='error_form')
+            if (code)
+                p(class='error_text') Error code: #{code}
+            if (message)
+                p(class='error_text') Error message: #{message}
+            if (err)
+                p(class='error_text') Error stack: #{err}

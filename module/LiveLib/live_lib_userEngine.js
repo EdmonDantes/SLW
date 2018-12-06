@@ -5,6 +5,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
 
     let base = global.LiveLib.base;
     global.LiveLib.loadLiveModule("logging");
+    let error = global.LiveLib.loadLiveModule("engine");
     let Database = global.LiveLib.loadLiveModule("database");
     let PhotoEngine = global.LiveLib.loadLiveModule("photoEngine");
     let bcrypt = base.getLib("bcrypt");
@@ -113,10 +114,10 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
         time: time > -1 ? time : null
       }, (err) => {
         if (err) {
-          if (callback) callback(err);
+          if (callback) callback(error.serv(err));
         }
         else {
-          callback(undefined, undefined, token);
+          callback(undefined, token);
         }
       });
     };
@@ -127,12 +128,12 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
           let that = this;
           bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
             if (err) {
-              if (callback) callback(err);
+              if (callback) callback(error.serv(err));
             }
             else {
               bcrypt.hash(user.password, salt, (err0, hash) => {
                 if (err0) {
-                  if (callback) callback(err0);
+                  if (callback) callback(error.serv(err0));
                 }
                 else {
                   user.passwordSalt = salt;
@@ -143,10 +144,10 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                       if (callback) {
                         switch (err1[0].code) {
                           case 1062:
-                            callback(err1[0], "users.register.wrong.login");
+                            callback(new error(2, "users.wrong.login", err1[0]));
                             break;
                           default:
-                            callback(err1[0]);
+                            callback(error.serv(err1[0]));
                             break;
                         }
                       }
@@ -162,7 +163,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
         }
       } catch (err) {
         if (e) throw err;
-        else if (callback) callback(err);
+        else if (callback) callback(error.serv(err));
         else global.LiveLib.getLogger().errorm("User Engine", "registerUser() => ", err);
       }
     };
@@ -173,17 +174,17 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
           let that = this;
           this.db.select("users", {where: "login = " + login}, (err, res) => {
             if (err) {
-              if (callback) callback(err, "users.serverError");
+              if (callback) callback(error.serv(err));
             }
             else {
               let obj = res[0];
               bcrypt.hash(password, obj.passwordSalt, (err0, res0) => {
                 if (err0) {
-                  if (callback) callback(err, "users.serverError");
+                  if (callback) callback(error.serv(err0));
                 }
                 else if (obj.password === res0) {
-                  createToken(obj.id, -1, remember ? -1 : 3600000, callback);
-                } else callback(undefined, "users.wrong.password");
+                  that.createToken(obj.id, -1, remember ? -1 : 3600000, callback);
+                } else callback(new error(3, "users.wrong.password"));
               });
             }
           });
@@ -191,7 +192,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
         }
       } catch (err) {
         if (e) throw err;
-        else if (callback) callback(err);
+        else if (callback) callback(error.serv(err));
         else global.LiveLib.getLogger().errorm("User engine", "loginUser() => ", err);
       }
       return false;
@@ -201,59 +202,67 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       let that = this;
       that.db.select("tokens", {where: "token = '" + token + "'"}, (err, res) => {
         if (err) {
-          if (handler) handler(err, "users.wrong.token");
+          if (handler) handler(error.serv(err));
         }
         else if (res && res.length > 0 && res[0]) {
-          if (!res[0].time || ((res[0].last_using + res[0].time) > Date.now() && (res[0] & permissions) === permissions)) {
-            that.db.select("users", {where: "id = " + res[0].user_id}, (err0, res0) => {
-              if (res0 && res0.length > 0 && res0[0]) {
-                if (res0[0].banned[0]) handler(err0, "users.banned");
-                else if (res0[0].deleted[0]) handler(err0, "users.deleted");
-                else {
+          if (!res[0].time || ((res[0].last_using + res[0].time) > Date.now())) {
+            if ((res[0] & permissions) === permissions) {
+              that.db.select("users", {where: "id = " + res[0].user_id}, (err0, res0) => {
+                if (err0) {
+                  if (handler) handler(error.serv(err0));
+                }
+                else if (res0 && res0.length > 0 && res0[0]) {
+                  if (res0[0].banned[0]) handler(new error(6, "users.banned"));
+                  else if (res0[0].deleted[0]) handler(new error(7, "users.deleted"));
+                  else {
 
-                  function func(result) {
-                    that.db.insert("actions", {
-                      token_id: res[0].id,
-                      type_action: type_action,
-                      time: Date.now(),
-                      success: !!result
-                    }, err => {
-                      if (err) if (handler) handler(err);
+                    function func(result) {
+                      that.db.insert("actions", {
+                        token_id: res[0].id,
+                        type_action: type_action,
+                        time: Date.now(),
+                        success: !!result
+                      }, err => {
+                        if (err && handler) handler(error.serv(err));
+                      });
+                    }
+
+                    try {
+                      callback(res0[0], func, that);
+                    } catch (err0) {
+                      if (handler) handler(error.serv(err0));
+                      func(false);
+                    }
+                    that.db.update("tokens", {last_using: Date.now(), "$$where": "token = '" + token + "'"}, err1 => {
+                      if (handler) {
+                        if (err1)
+                          handler(error.serv(err));
+                      }
                     });
                   }
-
-                  try {
-                    callback(res0[0], func, that);
-                  } catch (err0) {
-                    if (handler) handler(err0, "users.wrong.action");
-                    func(false);
-                  }
-                  that.db.update("tokens", {last_using: Date.now(), "$$where": "token = '" + token + "'"}, err1 => {
-                    if (handler) {
-                      if (err1)
-                        handler(err1);
-                    }
-                  });
-                }
-              } else if (handler) handler(err0, "users.not.find");
-            });
-          } else if (handler) handler(undefined, "users.wrong.token");
-        } else if (handler) handler(undefined, "users.not.find");
+                } else if (handler) handler(new error(8, "users.not.find"));
+              });
+            } else if (handler) handler(new error(5, "users.token.have.not.permissions"));
+          } else if (handler) handler(new error(4, "users.token.old"));
+        } else if (handler) handler(new error(9, "users.wrong.token"));
       });
     };
 
     users.prototype.getStatusWith = function (user_id_1, user_id_2, callback) {
-      this.db.select("relations", {where: "user_id_1 = " + Math.min(user_id_1, user_id_2) + " AND user_id_2 = " + Math.max(user_id_1, user_id_2)}, (err0, res0) => {
-        if (err0) callback(err0, "users.not.find");
+      if (user_id_1 != user_id_2) {
+        callback(new error(10, "users.can.not.status.self"));
+      } else
+        this.db.select("relations", {where: "user_id_1 = " + Math.min(user_id_1, user_id_2) + " AND user_id_2 = " + Math.max(user_id_1, user_id_2)}, (err, res) => {
+          if (err) callback(err);
         else {
-          callback(undefined, undefined, res0 ? res0[0].status[0] : undefined);
+            callback(undefined, res ? res[0].status[0] : undefined);
         }
       });
     };
 
     users.prototype.getRelationsWith = function (user_id_1, user_id_2, callback) {
       this.getStatusWith(user_id_1, user_id_2, (err, message, res) => {
-        if (err || message) callback(err, message);
+        if (err) callback(err);
         else if (res) {
           let tmp = "none";
           switch (res) {
@@ -269,104 +278,96 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
             case 6:
               tmp = "black";
           }
-          callback(undefined, undefined, tmp);
-        } else callback(undefined, undefined, "null");
+          callback(undefined, tmp);
+        } else callback(undefined, "null");
       });
     };
 
     users.prototype.accountBan = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("account.ban"), permissions.get("account"), callback, (user, func, that) => {
-        if (user.id == user_id) {
-          callback(undefined, "users.can.not.black");
-          func(false);
-        } else {
-          that.db.select("relations", {where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)}, (err0, res0) => {
-            if (err0) {
-              callback(err0, "users.not.find");
-              func(false);
+        that.getStatusWith(user_id, user.id, (err, rel) => {
+          if (err) {
+            callback(err);
+            func(false);
+          }
+          else if (rel) {
+            if ((user_id < user.id && rel === 4) || (user.id < user_id && rel[0] === 5)) {
+              that.db.update("relations", {
+                status: 6,
+                "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
+              }, err1 => {
+                if (err1)
+                  callback(error.serv(err1));
+                else callback(undefined);
+                func(err1);
+              });
             } else {
-              if (res0 && res0.length > 0 && res0[0]) {
-                let rel = res0[0].status[0];
-                if ((user_id < user.id && rel === 4) || (user.id < user_id && rel[0] === 5)) {
-                  that.db.update("relations", {
-                    status: 6,
-                    "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
-                  }, err1 => {
-                    if (err1) {
-                      callback(err1, "users.serverError");
-                      func(false);
-                    } else func(true);
-                  });
-                } else {
-                  that.db.update("relations", {
-                    status: user_id < user.id ? 5 : 4,
-                    "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
-                  }, err1 => {
-                    if (err1) {
-                      callback(err1, "users.serverError");
-                      func(false);
-                    } else func(true);
-                  });
-                }
-              } else {
-                that.db.insert("relations", {
-                  user_id_1: Math.min(user.id, user_id),
-                  user_id_2: Math.max(user.id, user_id),
-                  status: user_id < user.id ? 5 : 4
-                }, err1 => {
-                  if (err1) {
-                    callback(err1, "users.serverError");
-                    func(false);
-                  } else func(true);
-                });
-              }
+              that.db.update("relations", {
+                status: user_id < user.id ? 5 : 4,
+                "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
+              }, err1 => {
+                if (err1)
+                  callback(error.serv(err1));
+                else callback(undefined);
+                func(err1);
+              });
             }
-          });
-        }
+          } else {
+            that.db.insert("relations", {
+              user_id_1: Math.min(user.id, user_id),
+              user_id_2: Math.max(user.id, user_id),
+              status: user_id < user.id ? 5 : 4
+            }, err1 => {
+              if (err1)
+                callback(error.serv(err1));
+              else callback(undefined);
+              func(err1);
+            });
+          }
+        });
       });
     };
 
+    function __func0(user_id, that, callback) { //get user`s info from db
+      that.db.select("users", {where: "id = " + user_id}, (err, res) => {
+        if (err) callback(error.serv(err));
+        else if (res && res.length > 0 && res[0]) {
+          if (res[0].deleted[0]) {
+            callback(new error(11, "users.deleted"));
+          } else if (res[0].banned[0]) {
+            callback(new error(12, "users.banned"));
+          } else {
+            callback(undefined, res[0]);
+          }
+        } else callback(new error(8, "users.not.find"));
+      });
+    }
+
     users.prototype.accountGet = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
-        that.db.select("users", {where: "id = " + user_id}, (err0, res0) => {
-          if (err0 || !res0 || res0.length < 1 || !res0[0]) {
-            callback(err0, "users.not.find");
+        that.getRelationsWith(user_id, user.id, (err, res) => {
+          if (err) {
+            callback(err);
             func(false);
           }
           else {
-            if (res0[0].deleted[0]) {
-              callback(undefined, "users.deleted");
-              func(false);
-            }
-            else if (res0[0].banned[0]) {
-              callback(undefined, "users.banned");
-              func(false);
-            } else {
-              that.getRelationsWith(res0[0].id, user.id, (err1, message, res1) => {
-                if (err1 || message) {
-                  callback(err1, message);
-                } else {
-                  switch (res1) {
-                    case "none":
-                      if (res0[0].closed[0]) {
-                        callback(undefined, "users.closed");
-                        func(false);
-                      } else {
-                        callback(undefined, undefined, res0[0]);
-                        func(true);
-                      }
-                      break;
-                    case "friend":
-                      callback(undefined, undefined, res0[0]);
-                      func(true);
-                      break;
-                    case "black":
-                      callback(undefined, "users.in.black");
-                      func(false);
-                      break;
+            switch (res) {
+              case "black":
+                callback(new error(13, "users.in.black"));
+                func(false);
+                break;
+              default:
+                __func0(user_id, that, (err0, res0) => {
+                  if (err0) {
+                    callback(err0);
+                    func(false);
+                  } else {
+                    if (res0.closed[0] && res !== "friend") callback(new error(14, "users.closed"));
+                    else callback(undefined, res0);
+                    func(res0.closed[0] && res !== "friend");
                   }
-                }
-              });
+                });
+                break;
             }
           }
         });
@@ -375,12 +376,9 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
 
     users.prototype.accountGetSelf = function (token, callback) {
       this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
-        that.db.select("users", {where: "id = " + user.id}, (err, res) => {
-          if (err || !res || res.length < 1 || !res[0]) {
-            callback(err, "users.not.find");
-          } else {
-            callback(undefined, undefined, res[0])
-          }
+        __func0(user.id, that, (err, res) => {
+          if (err) callback(err);
+          else callback(undefined, res);
           func(err);
         });
       })
@@ -390,19 +388,19 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       this.createAction(token, types_actions.get("account.changePassword"), permissions.get("account"), callback, (user, func, that) => {
         bcrypt.hash(old_password, user.passwordSalt, (err, res) => {
           if (err) {
-            callback(err, "users.serverError");
+            callback(error.serv(err));
             func(false);
           }
           else if (user.password === res) {
             bcrypt.genSalt(users.SALT_LENGTH, (err0, salt) => {
               if (err0) {
-                callback(err0, "users.serverError");
+                callback(error.serv(err0));
                 func(false);
               }
               else {
                 bcrypt.hash(new_password, salt, (err1, hash) => {
                   if (err1) {
-                    callback(err1, "users.serverError");
+                    callback(error.serv(err1));
                     func(false);
                   }
                   else {
@@ -411,8 +409,8 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                       passwordSalt: salt,
                       "$$where": "id = " + user.id
                     }, err2 => {
-                      if (err2) callback(err2, "users.serverError");
-                      else callback(undefined, undefined, true);
+                      if (err2) callback(error.serv(err2));
+                      else callback(undefined);
                       func(err2);
                     });
                   }
@@ -420,7 +418,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
               }
             });
           } else {
-            callback(undefined, "users.wrong.password");
+            callback(new error(3, "users.wrong.password"));
             func(false);
           }
         });
@@ -431,7 +429,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       this.createAction(token, types_actions.get("account.getBanned"), permissions.get("account"), callback, (user, func, that) => {
         that.db.select("relations", {where: "user_id_1 = " + user.id}, (err, res) => {
           if (err) {
-            callback(err, "users.serverError");
+            callback(error.serv(err));
             func(false);
           } else {
             let ids = [];
@@ -439,7 +437,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
               if (obj.user_id_1 === user.id) ids.push(obj.user_id_2);
               else ids.push(obj.user_id_1);
             }
-            callback(undefined, undefined, ids);
+            callback(undefined, ids);
           }
         });
       })
@@ -447,19 +445,18 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
 
     users.prototype.accountUnban = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("account.unban"), permissions.get("account"), callback, (user, func, that) => {
-        that.db.select("relations", {where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)}, (err, res) => {
+        that.getStatusWith(user_id, user.id, (err, rel) => {
           if (err) {
-            callback(err, "users.serverError");
+            callback(err);
             func(false);
-          } else {
-            let rel = res[0].status[0];
+          } else if (rel) {
             if (rel === 6) {
               that.db.update("relations", {
                 status: user_id < user.id ? 4 : 5,
                 where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
               }, err0 => {
-                if (err0) callback(err0, "users.serverError");
-                else callback(undefined, undefined, true);
+                if (err0) callback(error.serv(err0));
+                else callback(undefined);
                 func(err0);
               });
             } else if ((rel === 4 && user.id < user_id) || (rel === 5 && user_id < user.id)) {
@@ -467,13 +464,13 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                 status: 3,
                 where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
               }, err0 => {
-                if (err0) callback(err0, "users.serverError");
-                else callback(undefined, undefined, true);
+                if (err0) callback(error.serv(err0));
+                else callback(undefined);
                 func(err0);
               });
             } else {
+              callback(undefined);
               func(true);
-              callback(undefined, undefined, true);
             }
           }
         });
@@ -482,13 +479,10 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
 
     users.prototype.accountStatusWith = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("account.statusWith"), permissions.get("account"), callback, (user, func, that) => {
-        that.getRelationsWith(user_id, user.id, (err, message, res) => {
-          if (err || message) {
-            callback(err, message);
-          } else {
-            callback(undefined, undefined, res);
-          }
-          func(err || message);
+        that.getRelationsWith(user_id, user.id, (err, res) => {
+          if (err) callback(err);
+          else callback(undefined, res);
+          func(err);
         });
       });
     };
@@ -496,12 +490,12 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     users.prototype.friendsAdd = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("friends.add"), permissions.get("friends"), callback, (user, func, that) => {
         if (user_id === user.id) {
-          callback(undefined, "users.add.friends.yourself");
+          callback(new error(15, "users.can.not.add.friends.self"));
           func(false);
         } else
-          that.getStatusWith(user_id, user.id, (err, message, res) => {
-            if (err || message) {
-              callback(err, message);
+          that.getStatusWith(user_id, user.id, (err, res) => {
+            if (err) {
+              callback(err);
               func(false);
             } else {
               if (res) {
@@ -510,14 +504,14 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                     status: 0,
                     "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
                   }, err => {
-                    if (err) callback(err, "users.serverError");
-                    else callback(undefined, undefined, true);
+                    if (err) callback(error.serv(err));
+                    else callback(undefined);
                     func(err);
                   });
                 } else if (res === user_id < user.id ? 4 : 5 || res === 6) {
-                  callback(undefined, "users.in.black");
+                  callback(new error(13, "users.in.black"));
                 } else if (res === user_id < user_id ? 4 : 5) {
-                  callback(undefined, "users.in.your.black");
+                  callback(new error(16, "users.in.your.black"));
                 }
               } else {
                 that.db.insert("relations", {
@@ -525,7 +519,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                   user_id_2: Math.max(user_id, user.id),
                   status: user_id < user.id ? 2 : 1
                 }, err => {
-                  if (err) callback(err, "users.serverError");
+                  if (err) callback(error.serv(err));
                   func(err);
                 });
               }
@@ -537,12 +531,12 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     users.prototype.friendsDelete = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("friends.delete"), permissions.get("friends"), callback, (user, func, that) => {
         if (user_id === user.id) {
-          callback(undefined, "users.delete.friends.yourself");
+          callback(new error(17, "users.can.not.delete.friends.self"));
           func(false);
         } else {
           that.getStatusWith(user_id, user.id, (err, res) => {
             if (err) {
-              callback(err, "users.serverError");
+              callback(error.serv(err));
               func(false);
             } else if (res) {
               if (res === 0) {
@@ -550,8 +544,8 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                   status: user_id < user.id ? 1 : 2,
                   "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
                 }, err => {
-                  if (err) callback(err, "users.serverError");
-                  else callback(undefined, undefined, true);
+                  if (err) callback(error.serv(err));
+                  else callback(undefined);
                   func(err);
                 });
               } else if (res === user_id < user.id ? 2 : 1) {
@@ -559,16 +553,16 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                   status: 3,
                   "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
                 }, err => {
-                  if (err) callback(err, "users.serverError");
-                  else callback(undefined, undefined, true);
+                  if (err) callback(error.serv(err));
+                  else callback(undefined);
                   func(err);
                 });
               } else {
-                callback(undefined, undefined, true);
+                callback(undefined);
                 func(true);
               }
             } else {
-              callback(undefined, undefined, true);
+              callback(undefined);
               func(true);
             }
           });

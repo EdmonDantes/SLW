@@ -3,6 +3,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
     if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
     if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
     global.LiveLib.loadLiveModule("logging");
+    let error = global.LiveLib.loadLiveModule("engine");
     let base = global.LiveLib.base;
     let Database = global.LiveLib.loadLiveModule("database");
     let path = base.getLib("path");
@@ -34,7 +35,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
         function write(db, photo, folder, type, url_path, callback) {
           photo.format((err, val) => {
             if (err) {
-              if (callback) callback(err, "photo.error.format");
+              if (callback) callback(new error(18, "photo.wrong.format"));
             }
             else {
               let name = base.createRandomString(65) + "." + val;
@@ -42,13 +43,13 @@ let live_lib_photoEngine = function () {//TODO: create new module
               let db_url = url.resolve(url_path, "photo=" + name);
               photo.write(file_name, err => {
                 if (err) {
-                  if (callback) callback(err, "photo.error.free_space");
+                  if (callback) callback(error.serv(err));
                 }
                 else {
                   db.insert("photo_engine", {type: type, url: db_url}, (err, res) => {
                     if (callback) {
-                      if (err) callback(err[0], "photo.error.database");
-                      else callback(undefined, "photo.success", res[0].insertId);
+                      if (err) callback(error.serv(err[0]));
+                      else callback(undefined, res[0].insertId);
                     }
                   });
                 }
@@ -71,7 +72,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
             case 2: //medium photo 200x(h/w) * 200 or 200x200 px
               photo.size((err, val) => {
                 if (err) {
-                  if (callback) callback(err, "photo.error.size");
+                  if (callback) callback(error.serv(err));
                 }
                 else {
                   let new_height = val.width / val.height * 200;
@@ -84,7 +85,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
             case 3: //big photo max(1920x1080) px
               photo.size((err, val) => {
                 if (err) {
-                  if (callback) callback(err, "photo.error.size");
+                  if (callback) callback(error.serv(err));
                 }
                 else {
                   let proportions = val.width / val.height;
@@ -116,19 +117,19 @@ let live_lib_photoEngine = function () {//TODO: create new module
       try {
         this.db.select("photo_engine", {where: "id = " + id_photo + " AND type = " + type_of_photo}, (err, val) => {
           if (callback) {
-            if (err) callback(err, "photo.error.database");
+            if (err) callback(error.serv(err));
             else {
               if (val.length > 0) {
-                callback(undefined, undefined, val[0].url.toString());
+                callback(undefined, val[0].url.toString());
               } else {
-                callback(undefined, "photo.not.find");
+                callback(new error(19, "photo.not.find"));
               }
             }
           }
         });
       } catch (err) {
         if (e) throw err;
-        else if (callback) callback(err, "photo.error.global");
+        else if (callback) callback(err);
         else global.LiveLib.getLogger().errorm("Photo Engine", "sendPhotoFromServer => ", err);
       }
     };
