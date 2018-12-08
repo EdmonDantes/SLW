@@ -11,6 +11,7 @@ let domen = "http://localhost:8080";
 
 LiveLib.base.createIfNotExists(folder);
 
+
 function checkError(err, res) {
   if (err) {
     if (err.message) {
@@ -27,7 +28,7 @@ function checkError(err, res) {
   return !!err;
 }
 
-function renderRegisterForm(res, error_message) {
+function renderRegisterForm(res, lang, error_message) {
   res.render(path.join(folder, "registerForm.pug"),
     {
       login: locale.getSync("login", lang),
@@ -53,6 +54,7 @@ function renderUserForm(res, token, user) {
   res.render(path.join(folder, "userForm.pug"), us);
 }
 
+
 server.get("/", (res) => {
   if (res.cookies.token) {
     users.accountGetSelf(res.cookies.token, (err0, res0) => {
@@ -62,8 +64,14 @@ server.get("/", (res) => {
         res.res.sendStatus(200);
     });
   } else {
-    res.res.render(path.join(folder, "registerForm"));
+    renderRegisterForm(res.res, res.args.lang);
   }
+});
+
+server.get("/reset", (res) => {
+  res.res.cookie("token", "");
+  res.res.header("Location", domen);
+  res.res.sendStatus(200);
 });
 
 server.get("/join", (res) => {
@@ -71,8 +79,7 @@ server.get("/join", (res) => {
     res.res.header("Location", domen);
     res.res.sendStatus(303);
   } else {
-    let lang = res.args.lang;
-    renderRegisterForm(res.res);
+    renderRegisterForm(res.res, res.args.lang);
   }
 });
 
@@ -83,8 +90,7 @@ server.post("/join", (res) => {
   } else {
     users.registerUser(res.body, (err, res0) => {
       if (err) {
-        let lang = res.args.lang;
-        renderRegisterForm(res.res, "Wrong users data");
+        renderRegisterForm(res.res, res.args.lang, "Wrong users data");
       } else {
         res.res.cookie("token", res0);
         res.res.header("Location", domen);
