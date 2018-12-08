@@ -7,14 +7,15 @@ let users = new LiveLib.userEngine(pref.get("host", "localhost"), pref.get("user
 let folder = path.resolve("./html");
 let locale = new LiveLib.locale("./locales");
 let url = LiveLib.base.getLib("url");
-let domen = "http://localhost:8080";
+let port = 8080;
+let domen = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
 
 LiveLib.base.createIfNotExists(folder);
 
 
 let methods = {};
 
-server.get("/api/")
+
 
 
 
@@ -108,13 +109,12 @@ server.post("/join", (res) => {
   }
 });
 
-server.get("/user:id", (err, res) => {
-  if (res.cookies.token && Object.keys(res.args)[0]) {
-    users.accountGet(Object.keys(res.args)[0], res.cookies.token, (err0, res0) => {
+server.get("/user:id", (res) => {
+  if (res.cookies.token && res.params && res.params.id) {
+    users.accountGet(res.params.id, res.cookies.token, (err0, res0) => {
       if (!checkError(err0, res)) {
         res.res.render(path.join(folder, "userForm.pug"), res0);
       }
-      res.res.sendStatus(200);
     });
   } else {
     res.res.render(path.join(folder, "errorForm.pug"), {
@@ -124,7 +124,7 @@ server.get("/user:id", (err, res) => {
   }
 });
 
-server.get("/method/:args", (err, res) => {
+server.get("/method/:args", (res) => {
   if (res.args && methods.get(res.args)) {
     methods.get(res.args)(res.query, (err0, res0) => {
       if (err0) {

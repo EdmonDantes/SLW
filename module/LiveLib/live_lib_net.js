@@ -14,23 +14,7 @@ let live_lib_net = function (settings) {
   let os = base.getLib("os");
   let path = base.getLib("path");
 
-  function getLocalServerIP(e) {
-    try {
-      let ifaces = os.networkInterfaces();
-      for (let ifname of Object.keys(ifaces)) {
-        for (let iface of ifaces[ifname]) {
-          if ("IPv4" !== iface.family || iface.internal !== false) {
-            // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
-            continue;
-          }
-          return iface.address;
-        }
-      }
-    } catch (err) {
-      if (e) throw err;
-      else logger().errorm("Net", "getLocalServerIP => ", err);
-    }
-  }
+
 
   global.LiveLib.net = function (host = "/", port = 8080, view_engine = "pug") {
     this.app = express();
@@ -52,6 +36,24 @@ let live_lib_net = function (settings) {
 
   let Server = global.LiveLib.net;
   base.createClass(Server);
+
+  global.LiveLib.net.getLocalServerIP = function (e) {
+    try {
+      let ifaces = os.networkInterfaces();
+      for (let ifname of Object.keys(ifaces)) {
+        for (let iface of ifaces[ifname]) {
+          if ("IPv4" !== iface.family || iface.internal !== false) {
+            // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+            continue;
+          }
+          return iface.address;
+        }
+      }
+    } catch (err) {
+      if (e) throw err;
+      else logger().errorm("Net", "getLocalServerIP => ", err);
+    }
+  };
 
   Server.prototype.get = function (name, callback, e) {
     try {

@@ -265,13 +265,13 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     };
 
     users.prototype.getStatusWith = function (user_id_1, user_id_2, callback) {
-      if (user_id_1 != user_id_2) {
+      if (user_id_1 == user_id_2) {
         callback(new error(10, "users.can.not.status.self"));
       } else
         this.db.select("relations", {where: "user_id_1 = " + Math.min(user_id_1, user_id_2) + " AND user_id_2 = " + Math.max(user_id_1, user_id_2)}, (err, res) => {
           if (err) callback(err);
         else {
-            callback(undefined, res ? res[0].status[0] : undefined);
+            callback(undefined, res && res.length > 0 ? res[0].status[0] : undefined);
         }
       });
     };
@@ -361,32 +361,38 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
 
     users.prototype.accountGet = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
-        that.getRelationsWith(user_id, user.id, (err, res) => {
-          if (err) {
-            callback(err);
-            func(false);
-          }
-          else {
-            switch (res) {
-              case "black":
-                callback(new error(11, "users.in.black"));
-                func(false);
-                break;
-              default:
-                __func0(user_id, that, (err0, res0) => {
-                  if (err0) {
-                    callback(err0);
-                    func(false);
-                  } else {
-                    if (res0.closed[0] && res !== "friend") callback(new error(12, "users.closed"));
-                    else callback(undefined, res0);
-                    func(res0.closed[0] && res !== "friend");
-                  }
-                });
-                break;
+        if (user_id == user.id) {
+          __func0(user.id, that, (err, res) => {
+            if (err) callback(err);
+            else callback(undefined, res);
+            func(err);
+          });
+        } else
+          that.getRelationsWith(user_id, user.id, (err, res) => {
+            if (err) {
+              callback(err);
+              func(false);
+            } else {
+              switch (res) {
+                case "black":
+                  callback(new error(11, "users.in.black"));
+                  func(false);
+                  break;
+                default:
+                  __func0(user_id, that, (err0, res0) => {
+                    if (err0) {
+                      callback(err0);
+                      func(false);
+                    } else {
+                      if (res0.closed[0] && res !== "friend") callback(new error(12, "users.closed"));
+                      else callback(undefined, res0);
+                      func(res0.closed[0] && res !== "friend");
+                    }
+                  });
+                  break;
+              }
             }
-          }
-        });
+          });
       });
     };
 
