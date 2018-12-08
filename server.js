@@ -12,6 +12,14 @@ let domen = "http://localhost:8080";
 LiveLib.base.createIfNotExists(folder);
 
 
+let methods = {};
+
+server.get("/api/")
+
+
+
+
+
 function checkError(err, res) {
   if (err) {
     if (err.message) {
@@ -51,7 +59,7 @@ function renderRegisterForm(res, lang, error_message) {
 
 function renderUserForm(res, token, user) {
 
-  res.render(path.join(folder, "userForm.pug"), us);
+  res.render(path.join(folder, "userForm.pug"), user);
 }
 
 
