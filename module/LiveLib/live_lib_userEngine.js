@@ -93,7 +93,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     types_actions.set("account.get", 2);
     types_actions.set("account.changePassword", 3);
     types_actions.set("account.getBanned", 4);
-    types_actions.set("account.unban", 5);
+    types_actions.set("account.unBan", 5);
     types_actions.set("account.statusWith", 6);
 
     types_actions.set("friends.add", 7);
@@ -101,8 +101,9 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     types_actions.set("friends.get", 9);
 
     types_actions.set("photos.add", 10);
-    types_actions.set("photos.get", 11);
-    types_actions.set("photos.set.avatar", 12);
+    types_actions.set("photos.getUrl", 11);
+    types_actions.set("photos.get", 12);
+    types_actions.set("photos.setAvatar", 12);
 
     let permissions = users.PERMISSIONS = new Map();
     permissions.set("account", 0);
@@ -458,8 +459,8 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       })
     };
 
-    users.prototype.accountUnban = function (user_id, token, callback) {
-      this.createAction(token, types_actions.get("account.unban"), permissions.get("account"), callback, (user, func, that) => {
+    users.prototype.accountUnBan = function (user_id, token, callback) {
+      this.createAction(token, types_actions.get("account.unBan"), permissions.get("account"), callback, (user, func, that) => {
         that.getStatusWith(user_id, user.id, (err, rel) => {
           if (err) {
             callback(err);
@@ -615,12 +616,31 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       });
     };
 
-    users.prototype.photosGet = function (photo_id, type, token, callback) {
-      this.createAction(token, types_actions.get("photos.get"), permissions.get("photos"), callback, (user, end, that) => {
+    users.prototype.photosGetURL = function (photo_id, type, token, callback) {
+      this.createAction(token, types_actions.get("photos.getUrl"), permissions.get("photos"), callback, (user, end, that) => {
         that.photo.sendPhotoFromServer(photo_id, type, (err, res) => {
           if (err) callback(err);
           else callback(undefined, res);
           end(err);
+        });
+      });
+    };
+
+    users.prototype.photosSetAvatar = function (photo_id, token, callback) {
+      this.createAction(token, types_actions.get("photos.setAvatar"), permissions.get("photos"), callback, (user, end, that) => {
+        that.photo.sendPhotoFromServer(photo_id, 2, (err, res) => {
+          if (err) {
+            callback(err);
+            end(false);
+          } else if (res) that.db.update("users", {avatar_id: photo_id, "$$where": "id = " + user.id}, (err0) => {
+            if (err) callback(error.serv(err));
+            else callback(undefined);
+            end(err);
+          });
+          else {
+            callback(new error(17, "photo.not.find"));
+            end(false);
+          }
         });
       });
     };

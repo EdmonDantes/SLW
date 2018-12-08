@@ -27,11 +27,37 @@ function checkError(err, res) {
   return !!err;
 }
 
+function renderRegisterForm(res, error_message) {
+  res.render(path.join(folder, "registerForm.pug"),
+    {
+      login: locale.getSync("login", lang),
+      placeholderLogin: locale.getSync("placeholderLogin", lang),
+      password: locale.getSync("password", lang),
+      placeholderPassword: locale.getSync("placeholderPassword", lang),
+      firstName: locale.getSync("firstName", lang),
+      middleName: locale.getSync("middleName", lang),
+      placeholderFirstName: locale.getSync("placeholderFirstName", lang),
+      placeholderMiddleName: locale.getSync("placeholderMiddleName", lang),
+      sendMessage: locale.getSync("sendMessage", lang),
+      resetMessage: locale.getSync("resetMessage", lang),
+      man: locale.getSync("man", lang),
+      woman: locale.getSync("woman", lang),
+      sex: locale.getSync("sex", lang),
+      have_error: !!error_message,
+      error_message: error_message
+    });
+}
+
+function renderUserForm(res, token, user) {
+
+  res.render(path.join(folder, "userForm.pug"), us);
+}
+
 server.get("/", (res) => {
   if (res.cookies.token) {
     users.accountGetSelf(res.cookies.token, (err0, res0) => {
       if (!checkError(err0, res)) {
-        res.res.render(path.join(folder, "userInfo"), res0);
+        renderUserForm(res.res, res.cookies.token, res0);
       } else
         res.res.sendStatus(200);
     });
@@ -46,23 +72,7 @@ server.get("/join", (res) => {
     res.res.sendStatus(303);
   } else {
     let lang = res.args.lang;
-    res.res.render(path.join(folder, "registerForm.pug"),
-      {
-        login: locale.getSync("login", lang),
-        placeholderLogin: locale.getSync("placeholderLogin", lang),
-        password: locale.getSync("password", lang),
-        placeholderPassword: locale.getSync("placeholderPassword", lang),
-        firstName: locale.getSync("firstName", lang),
-        middleName: locale.getSync("middleName", lang),
-        placeholderFirstName: locale.getSync("placeholderFirstName", lang),
-        placeholderMiddleName: locale.getSync("placeholderMiddleName", lang),
-        sendMessage: locale.getSync("sendMessage", lang),
-        resetMessage: locale.getSync("resetMessage", lang),
-        man: locale.getSync("man", lang),
-        woman: locale.getSync("woman", lang),
-        sex: locale.getSync("sex", lang),
-        have_error: false
-      });
+    renderRegisterForm(res.res);
   }
 });
 
@@ -74,24 +84,7 @@ server.post("/join", (res) => {
     users.registerUser(res.body, (err, res0) => {
       if (err) {
         let lang = res.args.lang;
-        res.res.render(path.join(folder, "registerForm.pug"),
-          {
-            login: locale.getSync("login", lang),
-            placeholderLogin: locale.getSync("placeholderLogin", lang),
-            password: locale.getSync("password", lang),
-            placeholderPassword: locale.getSync("placeholderPassword", lang),
-            firstName: locale.getSync("firstName", lang),
-            middleName: locale.getSync("middleName", lang),
-            placeholderFirstName: locale.getSync("placeholderFirstName", lang),
-            placeholderMiddleName: locale.getSync("placeholderMiddleName", lang),
-            sendMessage: locale.getSync("sendMessage", lang),
-            resetMessage: locale.getSync("resetMessage", lang),
-            man: locale.getSync("man", lang),
-            woman: locale.getSync("woman", lang),
-            sex: locale.getSync("sex", lang),
-            have_error: true,
-            error_message: "Wrong users data"
-          });
+        renderRegisterForm(res.res, "Wrong users data");
       } else {
         res.res.cookie("token", res0);
         res.res.header("Location", domen);
@@ -105,7 +98,7 @@ server.get("/user:id", (err, res) => {
   if (res.cookies.token && Object.keys(res.args)[0]) {
     users.accountGet(Object.keys(res.args)[0], res.cookies.token, (err0, res0) => {
       if (!checkError(err0, res)) {
-        res.res.render(path.join(folder, "userInfo.pug"), res0);
+        res.res.render(path.join(folder, "userForm.pug"), res0);
       }
       res.res.sendStatus(200);
     });
