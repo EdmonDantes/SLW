@@ -1,20 +1,36 @@
 server.error: Server error // Error code: 1
-users.wrong.login:
-users.wrong.password:
-users.token.old:
-users.token.have.not.permissions:
-users.banned:
-users.deleted:
+users.wrong.login: Wrong login
+users.wrong.password: Wrong password
+users.token.old: Old token
+users.token.have.not.permissions: This token haven`t this permission
+users.banned: This user was banned
+users.deleted: This user was deleted
 users.not.find: This user wasn`t find
-users.wrong.token:
-users.can.not.status.self:
-users.deleted:
-users.banned:
-users.in.black:
-users.closed:
-users.can.not.add.friends.self:
-users.in.your.black:
-users.can.not.delete.friends.self:
-photo.wrong.format:
-photo.not.find:
+users.wrong.token: This token is wrong
+users.can.not.status.self: You can do it on yourself
+users.in.black: You are in black list of this user
+users.closed: This user is closed. Add one to see profile
+users.can.not.add.friends.self: You can`t add friend yourself
+users.in.your.black: This user in your black list
+users.can.not.delete.friends.self: You can`t delete friend yourself
+photo.wrong.format: Wrong format of photo
+photo.not.find: Photo wasn`t find
 request.have.not.token: This request have not token. Please login or register.
+method.is.not.have: This method is have not on server
+users.wrong.data: Wrong data for users.
+
+
+//-----------------------Other strings--------------\\
+login: Login
+placeholderLogin: Your login (Example: john121)
+password: Password
+placeholderPassword: Your Password (Example: TzZUtoc0aH6I)
+firstName: First Name
+placeholderFirstName: Your first name (Example: John)
+middleName: Middle Name
+placeholderMiddleName: Your middle name (Example: Smith)
+sendMessage: Send
+resetMessage: Reset
+sex: Sex
+man: Man
+woman: Woman

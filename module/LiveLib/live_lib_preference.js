@@ -28,7 +28,7 @@ let _live_lib_preference = function () {
         let local = obj.split(":");
         let name = local[0];
         let value = local.splice(1).join(":");
-        if (name && name.length > 0 && value && value.length > 0) this.value.set(name.trim().toLowerCase(), value.trim());
+        if (name && name.length > 0 && value && value.length > 0) this.value.set(name.trim(), value.trim());
       }
       return true;
     } catch (err) {

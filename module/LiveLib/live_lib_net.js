@@ -61,7 +61,7 @@ let live_lib_net = function (settings) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
-          callback(undefined, {
+          callback({
             name: name,
             res: res,
             req: req,
@@ -79,7 +79,6 @@ let live_lib_net = function (settings) {
       }
     } catch (err) {
       if (e) throw err;
-      else if (callback) callback(err);
       else logger().errorm("Net", "Server => get: ", err);
     }
     return false;
@@ -94,7 +93,7 @@ let live_lib_net = function (settings) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
-          callback(undefined, {
+          callback({
             name: name,
             res: res,
             req: req,
@@ -114,7 +113,6 @@ let live_lib_net = function (settings) {
       }
     } catch (err) {
       if (e) throw err;
-      else if (callback) callback(err);
       else logger().errorm("Net", "Server => post: ", err);
     }
     return false;
@@ -129,7 +127,7 @@ let live_lib_net = function (settings) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
-          callback(undefined, {
+          callback({
             name: name,
             res: res,
             req: req,
@@ -149,7 +147,6 @@ let live_lib_net = function (settings) {
       }
     } catch (err) {
       if (e) throw err;
-      else if (callback) callback(err);
       else logger().errorm("Net", "Server => put: ", err);
     }
     return false;

@@ -6,6 +6,8 @@ pref.loadDataSync();
 let users = new LiveLib.userEngine(pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"));
 let folder = path.resolve("./html");
 let locale = new LiveLib.locale("./locales");
+let url = LiveLib.base.getLib("url");
+let domen = "http://localhost:8080";
 
 LiveLib.base.createIfNotExists(folder);
 
@@ -25,7 +27,81 @@ function checkError(err, res) {
   return !!err;
 }
 
-server.get("/id:id", (err, res) => {
+server.get("/", (res) => {
+  if (res.cookies.token) {
+    users.accountGetSelf(res.cookies.token, (err0, res0) => {
+      if (!checkError(err0, res)) {
+        res.res.render(path.join(folder, "userInfo"), res0);
+      } else
+        res.res.sendStatus(200);
+    });
+  } else {
+    res.res.render(path.join(folder, "registerForm"));
+  }
+});
+
+server.get("/join", (res) => {
+  if (res.cookies.token) {
+    res.res.header("Location", domen);
+    res.res.sendStatus(303);
+  } else {
+    let lang = res.args.lang;
+    res.res.render(path.join(folder, "registerForm.pug"),
+      {
+        login: locale.getSync("login", lang),
+        placeholderLogin: locale.getSync("placeholderLogin", lang),
+        password: locale.getSync("password", lang),
+        placeholderPassword: locale.getSync("placeholderPassword", lang),
+        firstName: locale.getSync("firstName", lang),
+        middleName: locale.getSync("middleName", lang),
+        placeholderFirstName: locale.getSync("placeholderFirstName", lang),
+        placeholderMiddleName: locale.getSync("placeholderMiddleName", lang),
+        sendMessage: locale.getSync("sendMessage", lang),
+        resetMessage: locale.getSync("resetMessage", lang),
+        man: locale.getSync("man", lang),
+        woman: locale.getSync("woman", lang),
+        sex: locale.getSync("sex", lang),
+        have_error: false
+      });
+  }
+});
+
+server.post("/join", (res) => {
+  if (res.cookies.token) {
+    res.res.header("Location", domen);
+    res.res.sendStatus(303);
+  } else {
+    users.registerUser(res.body, (err, res0) => {
+      if (err) {
+        let lang = res.args.lang;
+        res.res.render(path.join(folder, "registerForm.pug"),
+          {
+            login: locale.getSync("login", lang),
+            placeholderLogin: locale.getSync("placeholderLogin", lang),
+            password: locale.getSync("password", lang),
+            placeholderPassword: locale.getSync("placeholderPassword", lang),
+            firstName: locale.getSync("firstName", lang),
+            middleName: locale.getSync("middleName", lang),
+            placeholderFirstName: locale.getSync("placeholderFirstName", lang),
+            placeholderMiddleName: locale.getSync("placeholderMiddleName", lang),
+            sendMessage: locale.getSync("sendMessage", lang),
+            resetMessage: locale.getSync("resetMessage", lang),
+            man: locale.getSync("man", lang),
+            woman: locale.getSync("woman", lang),
+            sex: locale.getSync("sex", lang),
+            have_error: true,
+            error_message: "Wrong users data"
+          });
+      } else {
+        res.res.cookie("token", res0);
+        res.res.header("Location", domen);
+        res.res.sendStatus(303);
+      }
+    });
+  }
+});
+
+server.get("/user:id", (err, res) => {
   if (res.cookies.token && Object.keys(res.args)[0]) {
     users.accountGet(Object.keys(res.args)[0], res.cookies.token, (err0, res0) => {
       if (!checkError(err0, res)) {
@@ -41,26 +117,16 @@ server.get("/id:id", (err, res) => {
   }
 });
 
-
-server.get("/:args", (err, res) => {
-  if (res.cookies.token) {
-    users.accountGetSelf(res.cookies.token, (err, res0) => {
-      if (message) {
-        if (message === "users.wrong.token") {
-          res.res.cookie("token", "");
-        }
-        locale.get(message, res.args.locale, (err1, res1) => {
-          if (res1) res.res.send(res1);
-        });
-      }
-      else if (err) {
-        if (err.code) res.res.send("Error Code: #" + err.code + "\n\nError: " + err);
-        else res.res.send("Error: " + err);
+server.get("/method/:args", (err, res) => {
+  if (res.args && methods.get(res.args)) {
+    methods.get(res.args)(res.query, (err0, res0) => {
+      if (err0) {
+        res.res.send({error: {code: err0.code, message: locale.getSync(err0.message, res.query.lang)}});
       } else {
-        res.res.render(path.join(folder, "userInfo"), res0);
+        res.res.send({response: res0});
       }
     });
   } else {
-    res.res.render(path.join(folder, "registerForm"));
+    res.res.send({error: {code: 21, message: locale.getSync("method.is.not.have", res.query.lang)}});
   }
 });

@@ -1,0 +1,41 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    align-items: center;
+}
+
+div {
+    margin: auto;
+}
+
+h1, h2, h3 {
+    text-align: center;
+}
+
+form {
+    width: 50vw;
+    height: auto;
+    margin: auto;
+    border: 5px groove #8bcb67;
+    border-radius: 8px;
+}
+
+p {
+    margin-left: 1.5vw;
+    text-align: left;
+}
+
+b {
+    font-size: medium;
+}
+
+input {
+    width: calc(50vw - 1.5vw - 3px - 1.5vw);
+}
+
+input.radio {
+    width: auto;
+}

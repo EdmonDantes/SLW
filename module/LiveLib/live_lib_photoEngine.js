@@ -35,7 +35,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
         function write(db, photo, folder, type, url_path, callback) {
           photo.format((err, val) => {
             if (err) {
-              if (callback) callback(new error(18, "photo.wrong.format"));
+              if (callback) callback(new error(16, "photo.wrong.format"));
             }
             else {
               let name = base.createRandomString(65) + "." + val;
@@ -122,7 +122,7 @@ let live_lib_photoEngine = function () {//TODO: create new module
               if (val.length > 0) {
                 callback(undefined, val[0].url.toString());
               } else {
-                callback(new error(19, "photo.not.find"));
+                callback(new error(17, "photo.not.find"));
               }
             }
           }

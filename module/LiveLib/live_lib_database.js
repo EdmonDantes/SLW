@@ -58,7 +58,6 @@ let live_lib_database = function (settings) {
       if (err) global.LiveLib.getLogger().errorm("Database", "[[construstor]] => ", err)
     }) {
       try {
-        this.stackOfActions = [];
         this.connect = false;
         this.usePool = !!pools;
 
