@@ -18,6 +18,7 @@ photo.not.find: Photo wasn`t find
 request.have.not.token: This request have not token. Please login or register.
 method.is.not.have: This method is have not on server
 users.wrong.data: Wrong data for users.
+method.not.find: This method isn`t find
 
 
 //-----------------------Other strings--------------\\
@@ -34,3 +35,7 @@ resetMessage: Reset
 sex: Sex
 man: Man
 woman: Woman
+
+log_in: Log in
+join_in: Join in
+remember: Remember

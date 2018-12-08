@@ -15,6 +15,34 @@ LiveLib.base.createIfNotExists(folder);
 
 let methods = {};
 
+function sendError(res, err, lang) {
+  res.send({code: err.code, message: locale.getSync(err.message, lang)});
+}
+
+server.get("/:lang/api/:method", (res) => {
+  res.res.send(res.params);
+});
+
+server.get("/api/:method", (res) => {
+  if (res && res.params && res.params.method) {
+    if (methods[res.args.method]) {
+      try {
+        methods[res.args.method](res, (err0, res0) => {
+          if (err0) sendError(res.res, err0, res.args.lang);
+          else {
+            res.res.send({response: res0});
+          }
+        });
+      } catch (err) {
+        sendError(res.res, {code: 1, message: "server.error"}, res.args.lang)
+      }
+    } else {
+      sendError(res.res, {code: 21, message: "method.not.find"}, res.args.lang);
+    }
+  } else {
+    res.res.send({name: "Api", version: 1.2, message: "Please use '" + domen + "/api/<method>?[args]'"});
+  }
+});
 
 
 
@@ -35,6 +63,13 @@ function checkError(err, res) {
     }
   }
   return !!err;
+}
+
+function renderMainForm(res, lang) {
+  res.render(path.join(folder, "pug_templates", "mainForm.pug"), {
+    log_in: locale.getSync("log_in", lang),
+    join_in: locale.getSync("join_in", lang),
+  });
 }
 
 function renderRegisterForm(res, lang, error_message) {
@@ -59,8 +94,22 @@ function renderRegisterForm(res, lang, error_message) {
 }
 
 function renderUserForm(res, token, user) {
-
   res.render(path.join(folder, "userForm.pug"), user);
+}
+
+function renderLoginFrom(res, lang, error_message) {
+  res.render(path.join(folder, "pug_templates", "loginForm.pug"),
+    {
+      login: locale.getSync("login", lang),
+      placeholderLogin: locale.getSync("placeholderLogin", lang),
+      password: locale.getSync("password", lang),
+      placeholderPassword: locale.getSync("placeholderPassword", lang),
+      resetMessage: locale.getSync("resetMessage", lang),
+      log_in: locale.getSync("log_in", lang),
+      remember: locale.getSync("remember", lang),
+      have_error: !!error_message,
+      error_message: error_message
+    });
 }
 
 
@@ -73,7 +122,33 @@ server.get("/", (res) => {
         res.res.sendStatus(200);
     });
   } else {
-    renderRegisterForm(res.res, res.args.lang);
+    renderMainForm(res.res, res.args.lang);
+  }
+});
+
+server.get("/login", (res) => {
+  if (res.cookies.token) {
+    res.res.header("Location", domen);
+    res.res.sendStatus(303);
+  } else {
+    renderLoginFrom(res.res, res.args.lang);
+  }
+});
+
+server.post("/login", (res) => {
+  if (res.cookies.token) {
+    res.res.header("Location", domen);
+    res.res.sendStatus(303);
+  } else {
+    users.loginUser(res.body.login, res.body.password, (err, res0) => {
+      if (err) {
+        renderLoginFrom(res.res, res.args.lang, locale.getSync(err.message, res.args.lang));
+      } else {
+        res.res.cookie("token", res0);
+        res.res.header("Location", domen);
+        res.res.sendStatus(303);
+      }
+    });
   }
 });
 

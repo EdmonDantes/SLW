@@ -181,7 +181,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       try {
         if (login && password) {
           let that = this;
-          this.db.select("users", {where: "login = " + login}, (err, res) => {
+          this.db.select("users", {where: "login = '" + login + "'"}, (err, res) => {
             if (err) {
               if (callback) callback(error.serv(err));
             }
