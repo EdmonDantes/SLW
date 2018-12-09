@@ -29,6 +29,7 @@ methods["friends.delete"] = (res, callback) => users.friendsDelete(res.args.id, 
 methods["photos.add"] = (res, callback) => users.photosAdd(res.files.file, res.args.type, domen, res.args.token, callback);
 methods["photos.geturl"] = (res, callback) => users.photosGetURL(res.args.id, res.args.type, res.args.token, callback);
 methods["photos.setavatar"] = (res, callback) => users.photosSetAvatar(res.args.id, res.args.token, callback);
+methods["docs"] = (res, callback) => res.res.sendFile(path.join(folder, "html_static", "README_API.html"));
 
 function sendError(res, err, lang) {
   res.send({code: err.code, message: locale.getSync(err.message, lang)});
@@ -70,7 +71,6 @@ server.post("/api/:method", (res) => {
 server.post("/:lang/api/:method", (res) => {
   __func000(res);
 });
-
 
 
 
