@@ -19,6 +19,7 @@ request.have.not.token: This request have not token. Please login or register.
 method.is.not.have: This method is have not on server
 users.wrong.data: Wrong data for users.
 method.not.find: This method isn`t find
+api.wrong.arguments: Wrong arguments in request
 
 
 //-----------------------Other strings--------------\\

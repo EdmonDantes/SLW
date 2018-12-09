@@ -95,15 +95,15 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     types_actions.set("account.getBanned", 4);
     types_actions.set("account.unBan", 5);
     types_actions.set("account.statusWith", 6);
+    types_actions.set("account.getFriends", 7);
 
-    types_actions.set("friends.add", 7);
-    types_actions.set("friends.delete", 8);
-    types_actions.set("friends.get", 9);
+    types_actions.set("friends.add", 8);
+    types_actions.set("friends.delete", 9);
+    types_actions.set("friends.get", 10);
 
-    types_actions.set("photos.add", 10);
-    types_actions.set("photos.getUrl", 11);
-    types_actions.set("photos.get", 12);
-    types_actions.set("photos.setAvatar", 12);
+    types_actions.set("photos.add", 11);
+    types_actions.set("photos.getUrl", 12);
+    types_actions.set("photos.setAvatar", 13);
 
     let permissions = users.PERMISSIONS = new Map();
     permissions.set("account", 0);
@@ -198,7 +198,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
             }
           });
           return true;
-        }
+        } else callback(new error(22, "api.wrong.arguments"))
       } catch (err) {
         if (e) throw err;
         else if (callback) callback(error.serv(err));
@@ -277,19 +277,25 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     };
 
     users.prototype.getRelationsWith = function (user_id_1, user_id_2, callback) {
-      this.getStatusWith(user_id_1, user_id_2, (err, message, res) => {
+      this.getStatusWith(user_id_1, user_id_2, (err, res) => {
         if (err) callback(err);
-        else if (res) {
+        else if (res !== undefined) {
           let tmp = "none";
           switch (res) {
             case 0:
               tmp = "friend";
               break;
+            case 1:
+              tmp = user_id_1 < user_id_2 ? "sendRequest" : "getRequest";
+              break;
+            case 2:
+              tmp = user_id_1 < user_id_2 ? "getRequest" : "sendRequest";
+              break;
             case 4:
-              tmp = user_id_1 < user_id_2 ? "black" : "none";
+              tmp = user_id_1 < user_id_2 ? "black" : "in_black";
               break;
             case 5:
-              tmp = user_id_2 > user_id_1 ? "none" : "black";
+              tmp = user_id_1 < user_id_2 ? "in_black" : "black";
               break;
             case 6:
               tmp = "black";
@@ -315,7 +321,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                 if (err1)
                   callback(error.serv(err1));
                 else callback(undefined);
-                func(err1);
+                func(!err1);
               });
             } else {
               that.db.update("relations", {
@@ -325,7 +331,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                 if (err1)
                   callback(error.serv(err1));
                 else callback(undefined);
-                func(err1);
+                func(!err1);
               });
             }
           } else {
@@ -337,7 +343,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
               if (err1)
                 callback(error.serv(err1));
               else callback(undefined);
-              func(err1);
+              func(!err1);
             });
           }
         });
@@ -362,10 +368,28 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
     users.prototype.accountGet = function (user_id, token, callback) {
       this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
         if (user_id == user.id) {
-          __func0(user.id, that, (err, res) => {
+          __func0(user.id, that, (err, res0) => {
             if (err) callback(err);
-            else callback(undefined, res);
-            func(err);
+            else callback(undefined, {
+              id: res0.id,
+              login: res0.login,
+              firstName: res0.firstName,
+              lastName: res0.lastName,
+              secondName: res0.secondName,
+              sex: res0.sex[0] ? "man" : "woman",
+              bdate: res0.bdate,
+              city: res0.city,
+              country: res0.country,
+              avatar_id: res0.avatar_id,
+              mobile_phone: res0.mobile_phone,
+              home_phone: res0.home_phone,
+              size: res0.site,
+              status: res0.status,
+              verified: !!res0.verified[0],
+              closed: !!res0.closed[0],
+              screen_name: res0.screen_name
+            });
+            func(!err);
           });
         } else
           that.getRelationsWith(user_id, user.id, (err, res) => {
@@ -385,7 +409,25 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                       func(false);
                     } else {
                       if (res0.closed[0] && res !== "friend") callback(new error(12, "users.closed"));
-                      else callback(undefined, res0);
+                      else {
+                        callback(undefined, {
+                          id: res0.id,
+                          login: res0.login,
+                          firstName: res0.firstName,
+                          lastName: res0.lastName,
+                          secondName: res0.secondName,
+                          sex: res0.sex[0] ? "man" : "woman",
+                          bdate: res0.bdate,
+                          city: res0.city,
+                          country: res0.country,
+                          avatar_id: res0.avatar_id,
+                          mobile_phone: res0.mobile_phone,
+                          home_phone: res0.home_phone,
+                          size: res0.site,
+                          status: res0.status,
+                          verified: !!res0.verified[0]
+                        });
+                      }
                       func(res0.closed[0] && res !== "friend");
                     }
                   });
@@ -398,10 +440,28 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
 
     users.prototype.accountGetSelf = function (token, callback) {
       this.createAction(token, types_actions.get("account.get"), permissions.get("account"), callback, (user, func, that) => {
-        __func0(user.id, that, (err, res) => {
+        __func0(user.id, that, (err, res0) => {
           if (err) callback(err);
-          else callback(undefined, res);
-          func(err);
+          else callback(undefined, {
+            id: res0.id,
+            login: res0.login,
+            firstName: res0.firstName,
+            lastName: res0.lastName,
+            secondName: res0.secondName,
+            sex: res0.sex[0] ? "man" : "woman",
+            bdate: res0.bdate,
+            city: res0.city,
+            country: res0.country,
+            avatar_id: res0.avatar_id,
+            mobile_phone: res0.mobile_phone,
+            home_phone: res0.home_phone,
+            size: res0.site,
+            status: res0.status,
+            verified: !!res0.verified[0],
+            closed: !!res0.closed[0],
+            screen_name: res0.screen_name
+          });
+          func(!err);
         });
       })
     };
@@ -433,7 +493,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                     }, err2 => {
                       if (err2) callback(error.serv(err2));
                       else callback(undefined);
-                      func(err2);
+                      func(!err2);
                     });
                   }
                 });
@@ -452,7 +512,6 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
         that.db.select("relations", {where: "user_id_1 = " + user.id + " OR user_id_2 = " + user.id}, (err, res) => {
           if (err) {
             callback(error.serv(err));
-            func(false);
           } else {
             let ids = [];
             for (let obj of res) {
@@ -461,8 +520,50 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
             }
             callback(undefined, ids);
           }
+          func(!err);
         });
       })
+    };
+
+    users.prototype.accountGetFriends = function (user_id, token, callback) {
+      this.createAction(token, types_actions.get("account.getFriends"), permissions.get("account"), callback, (user, end, that) => {
+        if (!user_id || user_id == user.id) {
+          that.db.select("relations", {where: "(user_id_1 = " + user.id + " OR user_id_2 = " + user.id + ") AND status = b'000'"}, (err, res) => {
+            if (err) {
+              callback(error.serv(err));
+            } else {
+              let ids = [];
+              for (let obj of res) {
+                if (obj.user_id_1 == user.id) ids.push(obj.user_id_2);
+                else ids.push(obj.user_id_1);
+              }
+              callback(undefined, ids);
+            }
+            end(!err);
+          });
+        } else {
+          that.getRelationsWith(user_id, user.id, (err, res) => {
+            if (err) {
+              callback(err);
+              end(false);
+            } else if (!res || res !== "black") {
+              that.db.select("relations", {where: "(user_id_1 = " + user_id + " OR user_id_2 = " + user_id + ") AND status = b'000'"}, (err, res) => {
+                if (err) {
+                  callback(error.serv(err));
+                } else {
+                  let ids = [];
+                  for (let obj of res) {
+                    if (obj.user_id_1 == user_id) ids.push(obj.user_id_2);
+                    else ids.push(obj.user_id_1);
+                  }
+                  callback(undefined, ids);
+                }
+                end(!err);
+              });
+            }
+          });
+        }
+      });
     };
 
     users.prototype.accountUnBan = function (user_id, token, callback) {
@@ -479,7 +580,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
               }, err0 => {
                 if (err0) callback(error.serv(err0));
                 else callback(undefined);
-                func(err0);
+                func(!err0);
               });
             } else if ((rel === 4 && user.id < user_id) || (rel === 5 && user_id < user.id)) {
               that.db.update("relations", {
@@ -488,7 +589,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
               }, err0 => {
                 if (err0) callback(error.serv(err0));
                 else callback(undefined);
-                func(err0);
+                func(!err0);
               });
             } else {
               callback(undefined);
@@ -504,7 +605,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
         that.getRelationsWith(user_id, user.id, (err, res) => {
           if (err) callback(err);
           else callback(undefined, res);
-          func(err);
+          func(!err);
         });
       });
     };
@@ -528,7 +629,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                   }, err => {
                     if (err) callback(error.serv(err));
                     else callback(undefined);
-                    func(err);
+                    func(!err);
                   });
                 } else if (res === user_id < user.id ? 4 : 5 || res === 6) {
                   callback(new error(11, "users.in.black"));
@@ -542,7 +643,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                   status: user_id < user.id ? 2 : 1
                 }, err => {
                   if (err) callback(error.serv(err));
-                  func(err);
+                  func(!err);
                 });
               }
             }
@@ -568,7 +669,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                 }, err => {
                   if (err) callback(error.serv(err));
                   else callback(undefined);
-                  func(err);
+                  func(!err);
                 });
               } else if (res === user_id < user.id ? 2 : 1) {
                 that.db.update("relations", {
@@ -577,7 +678,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
                 }, err => {
                   if (err) callback(error.serv(err));
                   else callback(undefined);
-                  func(err);
+                  func(!err);
                 });
               } else {
                 callback(undefined);
@@ -592,32 +693,12 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
       });
     };
 
-    users.prototype.friendsGet = function (user_id, token, callback) {
-      this.createAction(token, types_actions.get("friends.get"), permissions.get("friends"), callback, (user, func, that) => {
-        that.db.select("relations", {where: "user_id_1 = " + user.id + " OR user_id_2 = " + user.id}, (err, res) => {
-          if (err) {
-            callback(error.serv(err));
-            func(false);
-          } else {
-            let ids = [];
-            for (let obj of res) {
-              if (obj.status[0] === 0) {
-                if (obj.user_id_1 === user.id) ids.push(obj.user_id_2);
-                else ids.push(obj.user_id_1);
-              }
-            }
-            callback(undefined, ids);
-          }
-        });
-      });
-    };
-
     users.prototype.photosAdd = function (photo, type, url, token, callback) {
       this.createAction(token, types_actions.get("photos.add"), permissions.get("photos"), callback, (user, end, that) => {
         that.photo.sendPhotoToServer(photo, type, url, (err, res) => {
           if (err) callback(err);
           else callback(undefined, res);
-          end(err);
+          end(!err);
         });
       });
     };
@@ -627,7 +708,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
         that.photo.sendPhotoFromServer(photo_id, type, (err, res) => {
           if (err) callback(err);
           else callback(undefined, res);
-          end(err);
+          end(!err);
         });
       });
     };
@@ -641,7 +722,7 @@ let live_lib_userEngine = function (settings) {//TODO: Edit with new version
           } else if (res) that.db.update("users", {avatar_id: photo_id, "$$where": "id = " + user.id}, (err0) => {
             if (err) callback(error.serv(err));
             else callback(undefined);
-            end(err);
+            end(!err);
           });
           else {
             callback(new error(17, "photo.not.find"));

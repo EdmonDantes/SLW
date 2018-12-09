@@ -1,0 +1,204 @@
+<html>
+<head>
+    <title>README API</title>
+    <style>
+        method {
+            font-size: 20px;
+            color: #544cbf;
+            font-weight: bold;
+        }
+
+        return {
+            color: #247818;
+            font-size: 14px;
+            font-weight: bold;
+            font-style: italic;
+            margin-left: 24px;
+        }
+    </style>
+</head>
+<body>
+<h1>How to use</h1>
+Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "http://DOMEN/&lt;lang&gt;/api/&lt;method&gt;?[args]"
+<h1>Methods</h1>
+<ul>
+    <li>
+        <method>account.login</method>
+        <br/>
+        <return>Return token for using api</return>
+        <ul>
+            <li><i>&lt;login&gt;</i> - User`s login</li>
+            <li><i>&lt;password&gt;</i> - User`s password</li>
+            <li><i>[remember]</i> - If true, request return unlimit token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.ban</method>
+        <br/>
+        <return>Return true if user was add to black list</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id who need delete from black list</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.get</method>
+        <br/>
+        <return>Return information about user</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.getSelf</method>
+        <br/>
+        <return>Return information about user self</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.changePassword</method>
+        <br/>
+        <return>For change password</return>
+        <ul>
+            <li><i>&lt;password&gt;</i> - User`s old password</li>
+            <li><i>&lt;newpassword&gt;</i> - User`s new password</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.getBanned</method>
+        <br/>
+        <return>Return array of users` id who is in black list</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.getFriends</method>
+        <br/>
+        <return>Return array of users` id who is friends</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.unBan</method>
+        <br/>
+        <return>Return true if user`s was delete from black list</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>account.statusWith</method>
+        <br/>
+        <return>Return status with user.</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+        <br/>
+        <br/>
+        <b>Status</b>
+        <ol>
+            <li><b>friend</b> - This user is friend</li>
+            <li><b>sendRequest</b> - You send friends request to this user</li>
+            <li><b>getRequest</b> - You get friends request from this user</li>
+            <li><b>none</b> or <b>null</b> or <b>undefined</b> - You have not relations with this user</li>
+            <li><b>in_black</b> - You added this user to black list</li>
+            <li><b>black</b> - This user added you to black list</li>
+        </ol>
+    </li>
+    <br>
+
+    <li>
+        <method>friends.add</method>
+        <br/>
+        <return>Adding user to friends if it can</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>friends.add</method>
+        <br/>
+        <return>Adding user to friends if it can</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <h2>Work in progress. Methods can change or have errors</h2>
+
+    <li>
+        <method>photos.add</method>
+        <br>
+        <b style="color: #f00;">ONLY POST REQUEST!!!</b>
+        <br/>
+        <return>Download photo to server</return>
+        <ul>
+            <li><i>&lt;photo&gt;</i> - Photo (in body)</li>
+            <li><i>&lt;type&gt;</i> - Type of photo</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+        <br/><br/>
+        <b>Type of photos</b>
+        <ol>
+            <li>Very small. Max size 50x50</li>
+            <li>Medium. Max size 200x300</li>
+            <li>Big. Max size 1920x1080</li>
+        </ol>
+    </li>
+    <br>
+
+    <li>
+        <method>photos.getURL</method>
+        <br/>
+        <return>Get url for download photo</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - Photo`s id</li>
+            <li><i>&lt;type&gt;</i> - Type of photo</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>photos.setAvatar</method>
+        <br/>
+        <return>Adding user to friends if it can</return>
+        <br/>
+        You don`t write type, because type for avatar`s is 2.
+        <ul>
+            <li><i>&lt;id&gt;</i> - Photo`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+</ul>
+</body>
+</html>

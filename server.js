@@ -15,33 +15,60 @@ LiveLib.base.createIfNotExists(folder);
 
 let methods = {};
 
+methods["account.login"] = (res, callback) => users.loginUser(res.args.login, res.args.password, callback, res.args.remember);
+methods["account.ban"] = (res, callback) => users.accountBan(res.args.id, res.args.token, callback);
+methods["account.get"] = (res, callback) => users.accountGet(res.args.id, res.args.token, callback);
+methods["account.getself"] = (res, callback) => users.accountGetSelf(res.args.token, callback);
+methods["account.changepassword"] = (res, callback) => users.accountChangePassword(res.args.password, res.args.newpassword, res.args.token, callback);
+methods["account.getbanned"] = (res, callback) => users.accountGetBanned(res.args.token, callback);
+methods["account.getfriends"] = (res, callback) => users.accountGetFriends(res.args.id, res.args.token, callback);
+methods["account.unban"] = (res, callback) => users.accountUnBan(res.args.id, res.args.token, callback);
+methods["account.statuswith"] = (res, callback) => users.accountStatusWith(res.args.id, res.args.token, callback);
+methods["friends.add"] = (res, callback) => users.friendsAdd(res.args.id, res.args.token, callback);
+methods["friends.delete"] = (res, callback) => users.friendsDelete(res.args.id, res.args.token, callback);
+methods["photos.add"] = (res, callback) => users.photosAdd(res.files.file, res.args.type, domen, res.args.token, callback);
+methods["photos.geturl"] = (res, callback) => users.photosGetURL(res.args.id, res.args.type, res.args.token, callback);
+methods["photos.setavatar"] = (res, callback) => users.photosSetAvatar(res.args.id, res.args.token, callback);
+
 function sendError(res, err, lang) {
   res.send({code: err.code, message: locale.getSync(err.message, lang)});
 }
 
-server.get("/:lang/api/:method", (res) => {
-  res.res.send(res.params);
-});
-
-server.get("/api/:method", (res) => {
+function __func000(res) { //function for execute method
   if (res && res.params && res.params.method) {
-    if (methods[res.args.method]) {
+    if (methods[res.params.method.toLowerCase()]) {
       try {
-        methods[res.args.method](res, (err0, res0) => {
-          if (err0) sendError(res.res, err0, res.args.lang);
-          else {
+        methods[res.params.method.toLowerCase()](res, (err0, res0) => {
+          if (err0) sendError(res.res, err0, res.args.lang || res.params.lang);
+          else if (res0) {
             res.res.send({response: res0});
-          }
+          } else res.res.send({response: true});
         });
       } catch (err) {
-        sendError(res.res, {code: 1, message: "server.error"}, res.args.lang)
+        sendError(res.res, {code: 1, message: "server.error"}, res.args.lang || res.params.lang)
       }
     } else {
-      sendError(res.res, {code: 21, message: "method.not.find"}, res.args.lang);
+      sendError(res.res, {code: 21, message: "method.not.find"}, res.args.lang || res.params.lang);
     }
   } else {
     res.res.send({name: "Api", version: 1.2, message: "Please use '" + domen + "/api/<method>?[args]'"});
   }
+}
+
+server.get("/:lang/api/:method", (res) => {
+  __func000(res);
+});
+
+server.get("/api/:method", (res) => {
+  __func000(res);
+});
+
+server.post("/api/:method", (res) => {
+  __func000(res);
+});
+
+server.post("/:lang/api/:method", (res) => {
+  __func000(res);
 });
 
 
@@ -51,7 +78,11 @@ server.get("/api/:method", (res) => {
 
 function checkError(err, res) {
   if (err) {
-    if (err.message) {
+    if (err.code === 4) {
+      res.res.cookie("token", "");
+      res.res.header("Location", "/");
+      res.res.sendStatus(303);
+    } else if (err.message) {
       locale.get(err.message, res.args.lang, (err1, res1) => {
         if (res1) {
           err.message = res1;
@@ -118,8 +149,7 @@ server.get("/", (res) => {
     users.accountGetSelf(res.cookies.token, (err0, res0) => {
       if (!checkError(err0, res)) {
         renderUserForm(res.res, res.cookies.token, res0);
-      } else
-        res.res.sendStatus(200);
+      }
     });
   } else {
     renderMainForm(res.res, res.args.lang);
