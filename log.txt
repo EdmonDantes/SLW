@@ -1,0 +1,23 @@
+[38;2;32;185;0m[INFO] [2018-12-09T06:51:25.519Z] - LiveLib: LiveLib: Module "Databases" loaded![0m
+[38;2;32;185;0m[INFO] [2018-12-09T06:51:25.797Z] - LiveLib: Server started with port : 8080[0m
+
+CTRL^C
+[38;2;32;185;0m[INFO] [2018-12-09T10:16:42.299Z] - LiveLib: LiveLib: Module "Databases" loaded![0m
+[38;2;32;185;0m[INFO] [2018-12-09T10:16:42.527Z] - LiveLib: Server started with port : 8080[0m
+
+CTRL^C
+[38;2;32;185;0m[INFO] [2018-12-09T12:21:03.305Z] - LiveLib: LiveLib: Module "Databases" loaded![0m
+[38;2;32;185;0m[INFO] [2018-12-09T12:21:03.521Z] - LiveLib: Server started with port : 8080[0m
+uncaughtException { Error: Connection lost: The server closed the connection.
+    at Protocol.end (/root/node_modules/mysql/lib/protocol/Protocol.js:112:13)
+    at Socket.<anonymous> (/root/node_modules/mysql/lib/Connection.js:97:28)
+    at Socket.<anonymous> (/root/node_modules/mysql/lib/Connection.js:502:10)
+    at emitNone (events.js:111:20)
+    at Socket.emit (events.js:208:7)
+    at endReadableNT (_stream_readable.js:1064:12)
+    at _combinedTickCallback (internal/process/next_tick.js:139:11)
+    at process._tickCallback (internal/process/next_tick.js:181:9)
+  [stack]: 'Error: Connection lost: The server closed the connection.\n    at Protocol.end (/root/node_modules/mysql/lib/protocol/Protocol.js:112:13)\n    at Socket.<anonymous> (/root/node_modules/mysql/lib/Connection.js:97:28)\n    at Socket.<anonymous> (/root/node_modules/mysql/lib/Connection.js:502:10)\n    at emitNone (events.js:111:20)\n    at Socket.emit (events.js:208:7)\n    at endReadableNT (_stream_readable.js:1064:12)\n    at _combinedTickCallback (internal/process/next_tick.js:139:11)\n    at process._tickCallback (internal/process/next_tick.js:181:9)',
+  [message]: 'Connection lost: The server closed the connection.',
+  fatal: true,
+  code: 'PROTOCOL_CONNECTION_LOST' }

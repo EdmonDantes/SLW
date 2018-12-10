@@ -71,6 +71,20 @@ let live_lib_database = function (settings) {
         this.connection = base.getLib("mysql").createConnection(con_obj);
 
         this.connection.connect(handler_connect);
+		let that = this;
+		
+		function __func001(){ // Create handler for error on connetion db
+			that.connection.on("error", err => {
+				if (err && err.code === "PROTOCOL_CONNECTION_LOST"){
+					that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+				}else {
+					global.LiveLib.getLogger().errorm("Database", "Ont connetion => ", err);
+					that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+				}
+			});
+		}
+		
+		__func001();
 
         if (database) {
           this.connection.query("CREATE DATABASE IF NOT EXISTS `" + database + "`;", err => {
@@ -88,6 +102,7 @@ let live_lib_database = function (settings) {
                   database: database,
                   connectionLimit: pools
                 });
+				__func001();
                 this.postInitFunc(err0 => {
                   if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "Database => createConnection - ", err0);
                 });
