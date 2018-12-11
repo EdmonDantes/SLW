@@ -6,7 +6,6 @@ let live_lib_database = function (settings) {
     let base = global.LiveLib.base;
     global.LiveLib.loadLiveModule("logging");
 
-
     global.LiveLib.database = function (host, user, password, port, database, pools, callback, e, handler_end, handler_connect) {
       this.connect = false;
       this.connection = null;
@@ -16,6 +15,34 @@ let live_lib_database = function (settings) {
         this.connectTo(host, user, password, port, database, pools, callback, e, handler_end, handler_connect);
       }
     };
+
+    function type(string) {
+      return function (count, binary) {
+        return string + (count ? "(" + count + ")" : "") + (binary ? " BINARY" : "");
+      }
+    }
+
+    global.TYNYINT = type("TINYINT"); // -128  127
+    global.UTYNYINT = type("TINYINT UNSIGNED"); // 0 255
+    global.BIT = type("BIT");
+    global.BOOL = type("BOOL");
+    global.SMALLINT = type("SMALLINT");
+    global.USMALLINT = type("SMALLINT UNSIGNED");
+    global.MEDIUMINT = type("MEDIUMINT");
+    global.UMEDIUMINT = type("MEDIUMINT UNSIGNED");
+    global.INT = type("INT");
+    global.UINT = type("INT UNSIGNED");
+    global.BIGINT = type("BIGINT");
+    global.CHAR = type("CHAR");
+    global.VARCHAR = type("VARCHAR");
+    global.TYNYBLOB = type("TINYBLOB");
+    global.TINYTEXT = type("TINYTEXT");
+    global.BLOB = type("BLOB");
+    global.TEXT = type("TEXT");
+    global.MEDIUMBLOB = type("MEDIUMBLOB");
+    global.MEDIUMTEXT = type("MEDIUMTEXT");
+    global.LONGBLOB = type("LONGBLOB");
+    global.LONGTEXT = type("LONGTEXT");
 
     let db = global.LiveLib.database;
 
@@ -71,7 +98,20 @@ let live_lib_database = function (settings) {
         this.connection = base.getLib("mysql").createConnection(con_obj);
 
         this.connection.connect(handler_connect);
+        let that = this;
 
+        function __func006() {
+          that.connection.on("error", err => {
+            if (err && err.code === "PROTOCOL_CONNECTION_LOST") {
+              that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+            } else {
+              global.LiveLib.getLogger().errorm("Database", "Connection error => ", err);
+              that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+            }
+          });
+        }
+
+        __func006();
         if (database) {
           this.connection.query("CREATE DATABASE IF NOT EXISTS `" + database + "`;", err => {
             if (err) {
@@ -88,6 +128,7 @@ let live_lib_database = function (settings) {
                   database: database,
                   connectionLimit: pools
                 });
+                __func006();
                 this.postInitFunc(err0 => {
                   if (callback) callback(err0); else global.LiveLib.getLogger().errorm("Database", "Database => createConnection - ", err0);
                 });
@@ -202,7 +243,7 @@ let live_lib_database = function (settings) {
           if (tmp instanceof String) {
             req += tmp + ",";
           } else {
-            req += tmp.name + " " + tmp.type;
+            req += "`" + tmp.name + "`" + " " + tmp.type;
 
             if (tmp.autoincrement)
               req += " AUTO_INCREMENT";
@@ -221,18 +262,18 @@ let live_lib_database = function (settings) {
             if (tmp.unique && tmp.unique.length > 0) {
               let tmp0 = "";
               for (let obj of tmp.unique) {
-                tmp0 += obj + ",";
+                tmp0 += "`" + obj + "`" + ",";
               }
               tmp0 += tmp.name;
-              req += "UNIQUE (" + tmp0 + "),";
+              req += "UNIQUE (" + tmp0 + "`),";
             }
 
             if (tmp.primary) {
-              req += "PRIMARY KEY(" + tmp.name + "),";
+              req += "PRIMARY KEY(`" + tmp.name + "`),";
             }
 
             if (tmp.foreign) {
-              req += "FOREIGN KEY(" + tmp.name + ") REFERENCES " + tmp.foreign.table + "(" + tmp.foreign.key + "),";
+              req += "FOREIGN KEY(`" + tmp.name + "`) REFERENCES `" + tmp.foreign.table + "`(`" + tmp.foreign.key + "`),";
             }
           }
         }
@@ -273,9 +314,9 @@ let live_lib_database = function (settings) {
           let returns = [];
           for (let i = 0; i < l; i++) {
             if (args[i] instanceof Array && i + 1 < l && args[i + 1] instanceof Array && args[i].length > 0 && args[i + 1].length > 0) {
-              let req = "INSERT INTO " + table + "(" + args[i][0];
+              let req = "INSERT INTO `" + table + "`(`" + args[i][0] + "`";
               for (let j = 1; j < args[i].length; j++) {
-                req += "," + args[i][j];
+                req += ",`" + args[i][j] + "`";
               }
               promises.push(new Promise(resolve => {
                 this.createRequest(req + ") VALUES (?);", args[i + 1], (err, res) => {
@@ -286,11 +327,11 @@ let live_lib_database = function (settings) {
               }));
               i++;
             } else if (args[i]) {
-              let req = "INSERT INTO " + table + "(";
+              let req = "INSERT INTO `" + table + "`(";
               let values = [];
               for (let [key, value] of Object.entries(args[i])) {
                 if (value !== undefined && value != null) {
-                  req += key + ",";
+                  req += "`" + key + "`,";
                   values.push(value);
                 }
               }
@@ -330,15 +371,15 @@ let live_lib_database = function (settings) {
 
         if (settings && settings.filters) {
           if (settings.filters instanceof Array && settings.filters.length > 0) {
-            req += settings.filters[0];
+            req += "`" + settings.filters[0] + "`";
             for (let i = 1; i < settings.filters.length; i++) {
-              req += "," + settings.filters[i];
+              req += ",`" + settings.filters[i] + "`";
             }
           } else if (typeof settings.filters === "string" || settings.filters instanceof String) {
             req += settings.filters;
           } else req += "*";
         } else req += "*";
-        req += " FROM " + table;
+        req += " FROM `" + table + "`";
 
         if (settings && settings.where) {
           if (settings.where instanceof Array && settings.where.length > 0) {
@@ -350,9 +391,9 @@ let live_lib_database = function (settings) {
 
         if (settings && settings.groupBy) {
           if (settings.groupBy instanceof Array && settings.groupBy.length > 0) {
-            req += " GROUP BY " + settings.groupBy[0];
+            req += " GROUP BY `" + settings.groupBy[0] + "`";
             for (let i = 1; i < settings.groupBy.length; i++) {
-              req += "," + settings.groupBy[i];
+              req += ",`" + settings.groupBy[i] + "`";
             }
           } else if (typeof settings.groupBy === "string" || settings.groupBy instanceof String) {
             req += " GROUP BY " + settings.groupBy;
@@ -396,7 +437,7 @@ let live_lib_database = function (settings) {
               for (let j = 0; j < args[i] && j < args[i + 1]; j++) {
                 if (args[i][j].toUpperCase() === "$$WHERE") where = args[i + 1][j];
                 else {
-                  req += args[i][j] + " = \"" + args[i + 1][j] + "\",";
+                  req += "`" + args[i][j] + "`" + " = '" + args[i + 1][j] + "',";
                 }
               }
 
@@ -426,9 +467,8 @@ let live_lib_database = function (settings) {
                 if (key.toUpperCase() === "$$WHERE") where = value;
                 else if (value !== undefined && value != null) {
                   if (typeof value === "number" || value instanceof Number) {
-                    req += key + " = " + value + ",";
-                  }
-                  else req += key + " = '" + value + "', ";
+                    req += "`" + key + "`" + " = " + value + ",";
+                  } else req += "`" + key + "`" + " = '" + value + "', ";
                 }
               }
               let tmp0 = req.lastIndexOf(",");

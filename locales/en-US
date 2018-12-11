@@ -20,6 +20,10 @@ method.is.not.have: This method is have not on server
 users.wrong.data: Wrong data for users.
 method.not.find: This method isn`t find
 api.wrong.arguments: Wrong arguments in request
+users.have.not.permissions: You dont have permissions for this action
+photo.wrong.type: It is wrong type of photo
+photo.wrong.target: This target does not exist
+photo.not.find.target: This target is not find
 
 
 //-----------------------Other strings--------------\\
@@ -40,3 +44,4 @@ woman: Woman
 log_in: Log in
 join_in: Join in
 remember: Remember
+welcome: Welcome

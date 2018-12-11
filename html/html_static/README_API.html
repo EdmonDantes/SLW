@@ -35,17 +35,6 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
     <br>
 
     <li>
-        <method>account.ban</method>
-        <br/>
-        <return>Return true if user was add to black list</return>
-        <ul>
-            <li><i>&lt;id&gt;</i> - User`s id who need delete from black list</li>
-            <li><i>&lt;token&gt;</i> - User`s token</li>
-        </ul>
-    </li>
-    <br>
-
-    <li>
         <method>account.get</method>
         <br/>
         <return>Return information about user</return>
@@ -67,48 +56,6 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
     <br>
 
     <li>
-        <method>account.changePassword</method>
-        <br/>
-        <return>For change password</return>
-        <ul>
-            <li><i>&lt;password&gt;</i> - User`s old password</li>
-            <li><i>&lt;newpassword&gt;</i> - User`s new password</li>
-            <li><i>&lt;token&gt;</i> - User`s token</li>
-        </ul>
-    </li>
-    <br>
-
-    <li>
-        <method>account.getBanned</method>
-        <br/>
-        <return>Return array of users` id who is in black list</return>
-        <ul>
-            <li><i>&lt;token&gt;</i> - User`s token</li>
-        </ul>
-    </li>
-    <br>
-
-    <li>
-        <method>account.getFriends</method>
-        <br/>
-        <return>Return array of users` id who is friends</return>
-        <ul>
-            <li><i>&lt;token&gt;</i> - User`s token</li>
-        </ul>
-    </li>
-    <br>
-
-    <li>
-        <method>account.unBan</method>
-        <br/>
-        <return>Return true if user`s was delete from black list</return>
-        <ul>
-            <li><i>&lt;token&gt;</i> - User`s token</li>
-        </ul>
-    </li>
-    <br>
-
-    <li>
         <method>account.statusWith</method>
         <br/>
         <return>Return status with user.</return>
@@ -123,17 +70,50 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><b>friend</b> - This user is friend</li>
             <li><b>sendRequest</b> - You send friends request to this user</li>
             <li><b>getRequest</b> - You get friends request from this user</li>
-            <li><b>none</b> or <b>null</b> or <b>undefined</b> - You have not relations with this user</li>
+            <li><b>null</b> - You have not relations with this user</li>
             <li><b>in_black</b> - You added this user to black list</li>
             <li><b>black</b> - This user added you to black list</li>
+            <li><b>all_black</b> - This user added you to black list and you added him to black list</li>
         </ol>
+    </li>
+    <br>
+
+    <li>
+        <method>blacklist.add</method>
+        <br/>
+        <return>Adding user to black list if it can</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>blacklist.delete</method>
+        <br/>
+        <return>Deleting user from black list if it can</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>blacklist.get</method>
+        <br/>
+        <return>Return array of id who you added to black list</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
     </li>
     <br>
 
     <li>
         <method>friends.add</method>
         <br/>
-        <return>Adding user to friends if it can</return>
+        <return>Send request to user or accept friend`s request</return>
         <ul>
             <li><i>&lt;id&gt;</i> - User`s id</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
@@ -144,7 +124,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
     <li>
         <method>friends.delete</method>
         <br/>
-        <return>Deleting user from friends if it can</return>
+        <return>Deleting user from friends if it can or delete sended request</return>
         <ul>
             <li><i>&lt;id&gt;</i> - User`s id</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
@@ -152,49 +132,117 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
     </li>
     <br>
 
-    <h2>Work in progress. Methods can change or have errors</h2>
+    <li>
+        <method>friends.get</method>
+        <br/>
+        <return>Return array of id who you added to friends</return>
+        <ul>
+            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>friends.getSendRequest</method>
+        <br/>
+        <return>Return array of id who you send friend`s request</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
+
+    <li>
+        <method>friends.getGetRequest</method>
+        <br/>
+        <return>Return array of id who send friend`s request to you</return>
+        <ul>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br>
 
     <li>
         <method>photos.add</method>
         <br>
         <b style="color: #f00;">ONLY POST REQUEST!!!</b>
         <br/>
-        <return>Download photo to server</return>
+        <return>Upload photo to server</return>
         <ul>
             <li><i>&lt;photo&gt;</i> - Photo (in body)</li>
-            <li><i>&lt;type&gt;</i> - Type of photo</li>
+            <li><i>&lt;access&gt;</i> - Access of photo</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
         <br/><br/>
-        <b>Type of photos</b>
-        <ol>
-            <li>Very small. Max size 50x50</li>
-            <li>Medium. Max size 200x300</li>
-            <li>Big. Max size 1920x1080</li>
-        </ol>
+        <b>Accesses</b>
+        <ul>
+            <li><b>0</b> - Only user who upload image</li>
+            <li><b>1</b> - Only friends of user who upload image</li>
+            <li><b>2</b> - Only friends of friends of user who upload image</li>
+            <li><b>3</b> - All</li>
+        </ul>
     </li>
     <br>
 
     <li>
-        <method>photos.getURL</method>
+        <method>photos.get</method>
         <br/>
-        <return>Get url for download photo</return>
+        <return>Return file of photo</return>
         <ul>
             <li><i>&lt;id&gt;</i> - Photo`s id</li>
             <li><i>&lt;type&gt;</i> - Type of photo</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
+        <b>Type of photos</b>
+        <ul>
+            <li><b>s</b> - Max size of side: 75px</li>
+            <li><b>m</b> - Max size of side: 130px</li>
+            <li><b>x</b> - Max size of side: 604px</li>
+            <li><b>o</b> - if width/height <= 1.5 return image with max width 130px else return crop image with aspect =
+                1.5 and max width = 130px
+            </li>
+            <li><b>p</b> - if width/height <= 1.5 return image with max width 200px else return crop image with aspect =
+                1.5 and max width = 200px
+            </li>
+            <li><b>q</b> - if width/height <= 1.5 return image with max width 320px else return crop image with aspect =
+                1.5 and max width = 320px
+            </li>
+            <li><b>r</b> - if width/height <= 1.5 return image with max width 510px else return crop image with aspect =
+                1.5 and max width = 510px
+            </li>
+            <li><b>y</b> - Max size of side: 807px</li>
+            <li><b>z</b> - Max size: 1080x1024</li>
+            <li><b>w</b> - Max size: 2560x2048</li>
+        </ul>
     </li>
     <br>
 
     <li>
-        <method>photos.setAvatar</method>
+        <method>photos.setTarget</method>
         <br/>
-        <return>Adding user to friends if it can</return>
+        <return>Set value</return>
         <br/>
         You don`t write type, because type for avatar`s is 2.
         <ul>
             <li><i>&lt;id&gt;</i> - Photo`s id</li>
+            <li><i>&lt;target&gt;</i> - Photo`s target</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+        <b>Targets</b>
+        <ul>
+            <li><b>1</b> - User`s avatar. <i>Warning: photo will be available for all users</i></li>
+        </ul>
+    </li>
+
+    <li>
+        <method>photos.getTarget</method>
+        <br/>
+        <return>Return value</return>
+        <br/>
+        You don`t write type, because type for avatar`s is 2.
+        <ul>
+            <li><i>&lt;target&gt;</i> - Photo`s target</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>

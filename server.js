@@ -3,32 +3,54 @@ let server = new LiveLib.net();
 let path = LiveLib.base.getLib("path");
 let pref = new LiveLib.preference("./server.pref");
 pref.loadDataSync();
-let users = new LiveLib.userEngine(pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"));
+let port = pref.get("serverPort", "8080");
+let domen = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
+let users = new LiveLib.userEngine(domen, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"));
 let folder = path.resolve("./html");
 let locale = new LiveLib.locale("./locales");
 let url = LiveLib.base.getLib("url");
-let port = 8080;
-let domen = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
+let request = LiveLib.base.getLib("request");
+let fs = LiveLib.base.getLib("fs");
+
+
 
 LiveLib.base.createIfNotExists(folder);
 
 
 let methods = {};
 
-methods["account.login"] = (res, callback) => users.loginUser(res.args.login, res.args.password, callback, res.args.remember);
-methods["account.ban"] = (res, callback) => users.accountBan(res.args.id, res.args.token, callback);
-methods["account.get"] = (res, callback) => users.accountGet(res.args.id, res.args.token, callback);
-methods["account.getself"] = (res, callback) => users.accountGetSelf(res.args.token, callback);
-methods["account.changepassword"] = (res, callback) => users.accountChangePassword(res.args.password, res.args.newpassword, res.args.token, callback);
-methods["account.getbanned"] = (res, callback) => users.accountGetBanned(res.args.token, callback);
-methods["account.getfriends"] = (res, callback) => users.accountGetFriends(res.args.id, res.args.token, callback);
-methods["account.unban"] = (res, callback) => users.accountUnBan(res.args.id, res.args.token, callback);
-methods["account.statuswith"] = (res, callback) => users.accountStatusWith(res.args.id, res.args.token, callback);
-methods["friends.add"] = (res, callback) => users.friendsAdd(res.args.id, res.args.token, callback);
-methods["friends.delete"] = (res, callback) => users.friendsDelete(res.args.id, res.args.token, callback);
-methods["photos.add"] = (res, callback) => users.photosAdd(res.files.file, res.args.type, domen, res.args.token, callback);
-methods["photos.geturl"] = (res, callback) => users.photosGetURL(res.args.id, res.args.type, res.args.token, callback);
-methods["photos.setavatar"] = (res, callback) => users.photosSetAvatar(res.args.id, res.args.token, callback);
+methods["account.login"] = (res, callback) => users.loginUser(res.login, res.password, callback, res.remember);
+methods["account.get"] = (res, callback) => users.accountGet(res.id, res.token, callback);
+methods["account.getself"] = (res, callback) => users.accountGetSelf(res.token, callback);
+methods["account.statuswith"] = (res, callback) => users.accountStatusWith(res.id, res.token, callback);
+//methods["account.changepassword"] = (res, callback) => users.accountChangePassword(res.args.password, res.args.newpassword, res.args.token, callback);
+methods["blacklist.add"] = (res, callback) => users.blacklistAdd(res.id, res.token, callback);
+methods["blacklist.delete"] = (res, callback) => users.blacklistDelete(res.id, res.token, callback);
+methods["blacklist.get"] = (res, callback) => users.blacklistGet(res.token, callback);
+
+methods["friends.add"] = (res, callback) => users.friendsAdd(res.id, res.token, callback);
+methods["friends.delete"] = (res, callback) => users.friendsDelete(res.id, res.token, callback);
+methods["friends.get"] = (res, callback) => users.friendsGet(res.id, res.token, callback);
+methods["friends.getsendrequest"] = (res, callback) => users.friendsGetSendRequest(res.token, callback);
+methods["friends.getgetrequest"] = (res, callback) => users.friendsGetGetRequest(res.token, callback);
+
+methods["photos.add"] = (res, callback) => users.photosAdd(res.file, res.access, res.token, callback);
+methods["photos.delete"] = (res, callback) => users.photosDelete(res.id, res.token, callback);
+methods["photos.getwithsystemkey"] = (res, callback) => callback(users.getPhoto(res.photo, res.key));
+methods["photos.get"] = (res, callback) => users.photosGet(res.id, res.type, res.token, (err0, res0, ip, key, name) => {
+  if (err0) callback(err0);
+  else if (res0) {
+    res0.pipe(res.res);
+  } else request(url.resolve(ip, "/api/photos.getWithSystemKey") + "?name=" + name + "&key=" + key, (err, res, body) => {
+    if (err) callback(global.LiveLib.ErrorMessage.serv(err));
+    else {
+      res.res.sendFile(body);
+    }
+  });
+});
+methods["photos.setTarget"] = (res, callback) => users.photosSetTarget(res.id, res.target, res.token, callback);
+methods["photos.getTarget"] = (res, callback) => users.photosGetTarget(res.target, res.token, callback);
+
 methods["docs"] = (res, callback) => res.res.sendFile(path.join(folder, "html_static", "README_API.html"));
 
 function sendError(res, err, lang) {
@@ -39,7 +61,27 @@ function __func000(res) { //function for execute method
   if (res && res.params && res.params.method) {
     if (methods[res.params.method.toLowerCase()]) {
       try {
-        methods[res.params.method.toLowerCase()](res, (err0, res0) => {
+        let input = {};
+        for (let [key, value] of Object.entries(res.args)) {
+          input[key] = value;
+        }
+        if (res.files) {
+          try {
+            input.file = Object.entries(res.files)[0][1];
+          } catch (err) {
+          }
+        }
+        input.res = res.res;
+        if (res.body) {
+          try {
+            let body = JSON.parse(res.body);
+            for (let [key, value] of Object.entries(body)) {
+              input[key] = value;
+            }
+          } catch (err) {
+          }
+        }
+        methods[res.params.method.toLowerCase()](input, (err0, res0) => {
           if (err0) sendError(res.res, err0, res.args.lang || res.params.lang);
           else if (res0) {
             res.res.send({response: res0});
@@ -52,7 +94,12 @@ function __func000(res) { //function for execute method
       sendError(res.res, {code: 21, message: "method.not.find"}, res.args.lang || res.params.lang);
     }
   } else {
-    res.res.send({name: "Api", version: 1.2, message: "Please use '" + domen + "/api/<method>?[args]'"});
+    res.res.send({
+      name: "Api",
+      versionServer: 1.2,
+      versionApi: 1.0,
+      message: "Please use '" + domen + "/api/<method>?[args]'"
+    });
   }
 }
 
@@ -78,7 +125,7 @@ server.post("/:lang/api/:method", (res) => {
 
 function checkError(err, res) {
   if (err) {
-    if (err.code === 4) {
+    if (err.code === 4 || err.code === 9) {
       res.res.cookie("token", "");
       res.res.header("Location", "/");
       res.res.sendStatus(303);
@@ -100,6 +147,7 @@ function renderMainForm(res, lang) {
   res.render(path.join(folder, "pug_templates", "mainForm.pug"), {
     log_in: locale.getSync("log_in", lang),
     join_in: locale.getSync("join_in", lang),
+    welcome: locale.getSync("welcome", lang),
   });
 }
 

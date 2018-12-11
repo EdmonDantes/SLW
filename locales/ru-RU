@@ -1,36 +1,46 @@
-server.error: Server error // Error code: 1
-users.wrong.login: Wrong login
-users.wrong.password: Wrong password
-users.token.old: Old token
-users.token.have.not.permissions: This token haven`t this permission
-users.banned: This user was banned
-users.deleted: This user was deleted
-users.not.find: This user wasn`t find
-users.wrong.token: This token is wrong
-users.can.not.status.self: You can do it on yourself
-users.in.black: You are in black list of this user
-users.closed: This user is closed. Add one to see profile
-users.can.not.add.friends.self: You can`t add friend yourself
-users.in.your.black: This user in your black list
-users.can.not.delete.friends.self: You can`t delete friend yourself
-photo.wrong.format: Wrong format of photo
-photo.not.find: Photo wasn`t find
-request.have.not.token: This request have not token. Please login or register.
-method.is.not.have: This method is have not on server
-users.wrong.data
+server.error: Ошибка сервера // Error code: 1
+users.wrong.login: Неправильный логин
+users.wrong.password: Неправильный пароль
+users.token.old: Старый токен
+users.token.have.not.permissions: У этого токена нет таких прав
+users.banned: Этот пользователь был заблокирован
+users.deleted: Этот пользователь был удалён
+users.not.find: Пользователь не найден
+users.wrong.token: Токен не дествителен
+users.can.not.status.self: Вы не можете узнать отношения с собой
+users.in.black: Вы в чёрном списке этого пользователя
+users.closed: Аккаунт пользователя доступен только друзьям
+users.can.not.add.friends.self: Вы не можете добавить себя в друзья
+users.in.your.black: Этот пользователь в вашем чёрном списке
+users.can.not.delete.friends.self: Вы не можете удалить себя из друзей
+photo.wrong.format: Неподходяший формат фото
+photo.not.find: Фото не найдено
+request.have.not.token: Запрос не содержит токена. Зарегистрируйтесь или войдите
+method.is.not.have: Такого метода нету на сервере
+users.wrong.data: Неправльные данные
+method.not.find: Такой метод не найден
+api.wrong.arguments: Неправильные аргументы в запросе
+users.have.not.permissions: У вас нет прав на это
+photo.wrong.type: Неправильный тип для фото
+photo.wrong.target: Неправильная цель для фото
 
 
 //-----------------------Other strings--------------\\
 login: Логин
-placeholderLogin: Your login (Example: john121)
-password: Password
-placeholderPassword: Your Password (Example: TzZUtoc0aH6I)
-firstName: First Name
-placeholderFirstName: Your first name (Example: John)
-middleName: Middle Name
-placeholderMiddleName: Your middle name (Example: Smith)
-sendMessage: Send
-resetMessage: Reset
-sex: Sex
-man: Man
-woman: Woman
+placeholderLogin: Ваш логин (Например: ivan121)
+password: Пароль
+placeholderPassword: Ваш пароль (Например: TzZUtoc0aH6I)
+firstName: Имя
+placeholderFirstName: Ваше имя (Например: Иван)
+middleName: Фамилия
+placeholderMiddleName: Ваша фамилия (Например: Иванов)
+sendMessage: Отправить
+resetMessage: Сбросить
+sex: Пол
+man: Мужчина
+woman: Женщина
+
+log_in: Войти
+join_in: Зарегистрироваться
+remember: Запомнить
+welcome: Здравстуйте
