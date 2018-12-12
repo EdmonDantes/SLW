@@ -54,7 +54,8 @@ methods["photos.get"] = (res, callback) => users.photosGet(res.id, res.type, res
 methods["photos.setTarget"] = (res, callback) => users.photosSetTarget(res.id, res.target, res.token, callback);
 methods["photos.getTarget"] = (res, callback) => users.photosGetTarget(res.target, res.token, callback);
 
-methods["docs"] = (res, callback) => res.res.sendFile(path.join(folder, "html_static", "README_API.html"));
+methods["docs"] = res => res.res.sendFile(path.join(folder, "html_static", "README_API.html"));
+methods["demo"] = res => res.res.sendFile(path.join(folder, "html_static", "test.html"));
 
 function sendError(res, err, lang) {
   res.send({code: err.code, message: locale.getSync(err.message, lang)});

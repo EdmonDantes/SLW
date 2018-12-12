@@ -7,11 +7,12 @@
     <script type="text/javascript">
       document.Base.encrypt("Hello", (err, res) => {
         console.log(err, res);
+        document.getElementById("1").appendChild(document.createTextNode(res));
       });
     </script>
     <title>Title</title>
 </head>
-<body>
+<body id="1">
 
 </body>
 </html>
