@@ -13,6 +13,8 @@ let live_lib_userEngine = function (settings) {
     let fs = base.getLib("fs");
     let path = base.getLib("path");
 
+    const TOKEN_LENGTH = 240;
+
 
     global.LiveLib.userEngine = function (server_ip, host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", port = null, count_pools = 20) {
       let that = this;
@@ -29,6 +31,7 @@ let live_lib_userEngine = function (settings) {
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
+
       db.select("servers", {where: "ip = '" + server_ip + "'"}, (err, res) => {
         if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         else if (res.length > 0) {
@@ -43,49 +46,57 @@ let live_lib_userEngine = function (settings) {
         }
       });
 
+      db.createTable("countries",
+        {name: "id", type: UINT(), primary: true, autoincrement: true},
+        {name: "country", type: VARCHAR(60, true)},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("cities",
+        {name: "id", type: UINT(), primary: true, autoincrement: true},
+        {name: "city", type: VARCHAR(85, true)},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
       db.createTable("users",
-        {name: "id", type: "INT UNSIGNED", primary: true, autoincrement: true}, // ID
-        {name: "login", type: "VARCHAR(80)", unique: true, notnull: true}, // Логин для входа в профиль
-        {name: "password", type: "VARCHAR(60) BINARY", notnull: true}, // Пароль в зашифрованном виде
-        {name: "passwordSalt", type: "VARCHAR(29) BINARY", notnull: true}, // Соль пароля
-        {name: "firstName", type: "VARCHAR(120) BINARY", notnull: true}, // Имя
-        {name: "lastName", type: "VARCHAR(120) BINARY", notnull: true}, // Фамилия
-        {name: "secondName", type: "VARCHAR(120) BINARY", notnull: true, default: "''"}, // Отчество
-        {name: "sex", type: "BIT", notnull: true}, // Пол
-        {name: "screen_name", type: "VARCHAR(120) BINARY", notnull: true, default: "''"}, // Ссылка на профиль
-        {name: "bdate", type: "VARCHAR(10) BINARY", notnull: true, default: "''"}, // День рождения
-        {name: "closed", type: "BIT", notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
-        {name: "city", type: "VARCHAR(60) BINARY", notnull: true, default: "''"}, // Город
-        {name: "country", type: "VARCHAR(80) BINARY", notnull: true, default: "''"}, // Страна
-        {name: "mobile_phone", type: "VARCHAR(12)", notnull: true, default: "''"}, // Мобильный телефон
-        {name: "home_phone", type: "VARCHAR(12)", notnull: true, default: "''"}, // Домашний телефон
-        {name: "site", type: "VARCHAR(60) BINARY", notnull: true, default: "''"}, // Сайт
-        {name: "status", type: "VARCHAR(255) BINARY", notnull: true, default: "''"}, // Статус на станице
-        {name: "verified", type: "BIT", default: "b'0'"}, // Верифицированна ли страница
-        {name: "banned", type: "BIT", default: "b'0'"}, // Забанена ли страница
-        {name: "deleted", type: "BIT", default: "b'0'"}, // Удалена ли страница
+        {name: "id", type: UINT(), primary: true, autoincrement: true}, // ID
+        {name: "login", type: VARCHAR(80), unique: true, notnull: true}, // Логин для входа в профиль
+        {name: "password", type: VARCHAR(60, true), notnull: true}, // Пароль в зашифрованном виде
+        {name: "passwordSalt", type: VARCHAR(29, true), notnull: true}, // Соль пароля
+        {name: "firstName", type: VARCHAR(120, true), notnull: true}, // Имя
+        {name: "secondName", type: VARCHAR(120, true), notnull: true}, // Фамилия
+        {name: "lastName", type: VARCHAR(120, true), notnull: true, default: "''"}, // Отчество
+        {name: "sex", type: BIT(), notnull: true}, // Пол
+        {name: "screen_name", type: VARCHAR(120, true), notnull: true, default: "''"}, // Ссылка на профиль
+        {name: "bdate", type: VARCHAR(10, true), notnull: true, default: "''"}, // День рождения
+        {name: "closed", type: BIT(), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
+        {name: "country", type: UINT(), foreign: {table: "countries", key: "id"}}, // Страна
+        {name: "city", type: UINT(), foreign: {table: "cities", key: "id"}}, // Город
+        {name: "mobile_phone", type: VARCHAR(12), notnull: true, default: "''"}, // Мобильный телефон
+        {name: "home_phone", type: VARCHAR(12), notnull: true, default: "''"}, // Домашний телефон
+        {name: "site", type: VARCHAR(60, true), notnull: true, default: "''"}, // Сайт
+        {name: "status", type: VARCHAR(60, true), notnull: true, default: "''"}, // Статус на станице
+        {name: "verified", type: BIT(), default: "b'0'"}, // Верифицированна ли страница
+        {name: "banned", type: BIT(), default: "b'0'"}, // Забанена ли страница
+        {name: "deleted", type: BIT(), default: "b'0'"}, // Удалена ли страница
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
-      db.createTable("photos",
-        {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true}, // Id фотографии
-        {name: "owner", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Владелец фотографии
-        {name: "server", type: UTYNYINT(), notnull: true, foreign: {table: "servers", key: "id"}}, // Сервер для хранения фотографии
-        {name: "access", type: BIT(2), notnull: true, default: "b'00'"}, // Модификатор доступа для фотографии
-        // 0 - Доступ только для пользователя
-        // 1 - Доступ только для друзей
-        // 2 - Доступ только для друзей друзей
-        // 3 - Доступ для всех
-        {name: "deleted", type: BIT(), notnull: true, default: "b'0'"}, // Модификатор удаления
+
+      db.createTable("tokens",
+        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id токена
+        {name: "token", type: VARCHAR(TOKEN_LENGTH, true), unique: true, notnull: true}, // Токен
+        {name: "user_id", type: UINT(), foreign: {table: "users", key: "id"}, notnull: true}, //Id пользователя
+        {name: "permissions", type: UINT(), notnull: true}, // Права токена
+        {name: "create_time", type: BIGINT(), notnull: true}, // Время создания токена
+        {name: "last_using", type: BIGINT(), notnull: true}, // Время последнего использования токена
+        {name: "time", type: BIGINT(), notnull: true}, // Время действия токена в миллисекундах
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
-      db.createTable("avatars",
-        {name: "user_id", type: UINT(), primary: true, notnull: true, foreign: {table: "users", key: "id"}}, // Id пользователя
-        {name: "photo_id", type: BIGINT(), notnull: true, foreign: {table: "photos", key: "id"}}, // Id фотографии
-        err => {
-          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
-        });
+
       db.createTable("relations",
         {name: "id", type: "INT UNSIGNED", primary: true, notnull: true, autoincrement: true}, // Id отношений
         {name: "user_id_1", type: "INT UNSIGNED", notnull: true}, // Первый пользователь (Всегда должен быть меньше второго)
@@ -102,23 +113,34 @@ let live_lib_userEngine = function (settings) {
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
-      db.createTable("tokens",
-        {name: "id", type: "INT UNSIGNED", primary: true, notnull: true, autoincrement: true}, // Id токена
-        {name: "token", type: "VARCHAR(60) BINARY", unique: true, notnull: true}, // Токен
-        {name: "user_id", type: "INT UNSIGNED", foreign: {table: "users", key: "id"}, notnull: true}, //Id пользователя
-        {name: "permissions", type: "INT UNSIGNED", notnull: true}, // Права токена
-        {name: "create_time", type: "BIGINT", notnull: true}, // Время создания токена
-        {name: "last_using", type: "BIGINT", notnull: true}, // Время последнего использования токена
-        {name: "time", type: "BIGINT"}, // Время действия токена в миллисекундах
+
+      db.createTable("photos",
+        {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true}, // Id фотографии
+        {name: "owner", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Владелец фотографии
+        {name: "server", type: UTYNYINT(), notnull: true, foreign: {table: "servers", key: "id"}}, // Сервер для хранения фотографии
+        {name: "access", type: BIT(2), notnull: true, default: "b'00'"}, // Модификатор доступа для фотографии
+        // 0 - Доступ только для пользователя
+        // 1 - Доступ только для друзей
+        // 2 - Доступ только для друзей друзей
+        // 3 - Доступ для всех
+        {name: "deleted", type: BIT(), notnull: true, default: "b'0'"}, // Модификатор удаления
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
+
+      db.createTable("avatars",
+        {name: "user_id", type: UINT(), primary: true, notnull: true, foreign: {table: "users", key: "id"}}, // Id пользователя
+        {name: "photo_id", type: BIGINT(), notnull: true, foreign: {table: "photos", key: "id"}}, // Id фотографии
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
       db.createTable("actions",
-        {name: "id", type: "INT UNSIGNED", primary: true, notnull: true, autoincrement: true}, // Id действия
-        {name: "token_id", type: "INT UNSIGNED", notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
-        {name: "type_action", type: "SMALLINT UNSIGNED", notnull: true}, // Вид действия
-        {name: "time", type: "BIGINT", notnull: true}, // Время совершения действия
-        {name: "success", type: "BIT", notnull: true, default: "b'0'"}, // Удачно ли действие завершено
+        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id действия
+        {name: "token_id", type: UINT(), notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
+        {name: "type_action", type: USMALLINT(), notnull: true}, // Вид действия
+        {name: "time", type: BIGINT(), notnull: true}, // Время совершения действия
+        {name: "success", type: BIT, notnull: true, default: "b'0'"}, // Удачно ли действие завершено
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -137,6 +159,7 @@ let live_lib_userEngine = function (settings) {
       "account.get",
       "account.getAvatar",
       "account.statusWith",
+      "account.edit",
 
       "blacklist.add",
       "blacklist.delete",
@@ -173,14 +196,14 @@ let live_lib_userEngine = function (settings) {
     }
 
     users.prototype.createToken = function (user_id, permissions, time, callback) {
-      let token = base.createRandomString(60);
+      let token = base.createRandomString(TOKEN_LENGTH);
       this.db.insert("tokens", {
         token: token,
         user_id: user_id,
         permissions: permissions > -1 ? permissions : users.ALL_PERM,
         create_time: Date.now(),
         last_using: Date.now(),
-        time: time > -1 ? time : null
+        time: time > -1 ? time : -1
       }, (err) => {
         if (err) {
           if (callback) callback(error.serv(err));
@@ -268,7 +291,7 @@ let live_lib_userEngine = function (settings) {
       that.db.select("tokens", {where: "token = '" + token + "'"}, (err, res) => {
         if (err) callback(error.serv(err));
         else if (res && res.length > 0 && res[0]) {
-          if (!res[0].time || ((res[0].last_using + res[0].time) > Date.now())) {
+          if (res[0].time < 0 || ((res[0].last_using + res[0].time) > Date.now())) {
             callback(undefined, res[0]);
           } else callback(new error(4, "users.token.old"));
         } else callback(new error(9, "users.wrong.token"));
@@ -405,6 +428,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.accountGet = function (user_id, token, callback) {
       this.createAction(token, "account.get", "account", callback, (user, end, that) => {
+        user_id = (user_id < 0 ? user.id : user_id);
         __func001(user.id, user_id, that, (err, res) => {
           if (err) {
             if (err.code === 10) {
@@ -440,16 +464,6 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
-    users.prototype.accountGetSelf = function (token, callback) {
-      this.createAction(token, "account.get", "account", callback, (user, func, that) => {
-        __func003(user.id, that, (err, res0) => {
-          if (err) callback(err);
-          else callback(undefined, res0);
-          func(!err);
-        });
-      })
-    };
-
     users.prototype.accountStatusWith = function (user_id, token, callback) {
       this.createAction(token, "account.statusWith", "account", callback, (user, end, that) => {
         __func001(user.id, user_id, that, (err, res) => {
@@ -457,6 +471,35 @@ let live_lib_userEngine = function (settings) {
           else callback(undefined, res);
           end(!err);
         });
+      });
+    };
+
+    users.prototype.accountEdit = function (input, token, callback) {
+      this.createAction(token, "account.edit", "account", callback, (user, end, that) => {
+        input.id = undefined;
+        that.db.update("users",
+          {
+            login: input.login,
+            firstName: input.firstName,
+            secondName: input.secondName,
+            lastName: input.lastName,
+            sex: input.sex === "man" ? 1 : 0,
+            screen_name: input.screen_name,
+            bdate: input.bdate,
+            closed: input.closed ? 1 : 0,
+            country: input.country,
+            city: input.city,
+            mobile_phone: input.mobile_phone,
+            home_phone: input.home_phone,
+            site: input.site,
+            status: input.status,
+            "$$where": "id = " + user.id
+          },
+          err => {
+            if (err) callback(error.serv(err));
+            else callback(undefined);
+            end(!err);
+          });
       });
     };
 
@@ -655,6 +698,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.friendsGet = function (user_id, token, callback) {
       this.createAction(token, "friends.get", "friends", callback, (user, end, that) => {
+        user_id = (user_id < 0 ? user.id : user_id);
         __func001(user_id, user.id, that, (err, res) => {
           if (err) {
             if (err.code == 10) {
@@ -1055,11 +1099,12 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
-    users.prototype.photosGetTarget = function (target, token, callback) {
+    users.prototype.photosGetTarget = function (user_id, target, token, callback) {
       this.createAction(token, "photos.getTarget", "photos", callback, (user, end, that) => {
+        user_id = (user_id < 0 ? user.id : user_id);
         switch (target) {
           case 1:
-            that.db.select("avatars", {where: "user_id = " + user.id}, (err, res) => {
+            that.db.select("avatars", {where: "user_id = " + user_id}, (err, res) => {
               if (err) {
                 callback(error.serv(err));
                 end(false);

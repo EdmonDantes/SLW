@@ -32,28 +32,19 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>[remember]</i> - If true, request return unlimit token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>account.get</method>
         <br/>
         <return>Return information about user</return>
         <ul>
-            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;id&gt;</i> - User`s id (If -1 return information about user self)</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
-    <li>
-        <method>account.getSelf</method>
-        <br/>
-        <return>Return information about user self</return>
-        <ul>
-            <li><i>&lt;token&gt;</i> - User`s token</li>
-        </ul>
-    </li>
-    <br>
 
     <li>
         <method>account.statusWith</method>
@@ -76,7 +67,18 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><b>all_black</b> - This user added you to black list and you added him to black list</li>
         </ol>
     </li>
-    <br>
+    <br/>
+
+    <li>
+        <method>account.edit</method>
+        <br/>
+        <return>Edit user</return>
+        <ul>
+            <li><i>&lt;input&gt;</i> - JSON object about edit information</li>
+            <li><i>&lt;token&gt;</i> - User`s token</li>
+        </ul>
+    </li>
+    <br/>
 
     <li>
         <method>blacklist.add</method>
@@ -87,7 +89,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>blacklist.delete</method>
@@ -98,7 +100,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>blacklist.get</method>
@@ -108,7 +110,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>friends.add</method>
@@ -119,7 +121,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>friends.delete</method>
@@ -130,18 +132,18 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>friends.get</method>
         <br/>
-        <return>Return array of id who you added to friends</return>
+        <return>Return array of id who added to friends user</return>
         <ul>
-            <li><i>&lt;id&gt;</i> - User`s id</li>
+            <li><i>&lt;id&gt;</i> - User`s id (If -1 return information about user self)</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>friends.getSendRequest</method>
@@ -151,7 +153,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>friends.getGetRequest</method>
@@ -161,11 +163,11 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>photos.add</method>
-        <br>
+        <br/>
         <b style="color: #f00;">ONLY POST REQUEST!!!</b>
         <br/>
         <return>Upload photo to server</return>
@@ -183,7 +185,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><b>3</b> - All</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>photos.get</method>
@@ -216,7 +218,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><b>w</b> - Max size: 2560x2048</li>
         </ul>
     </li>
-    <br>
+    <br/>
 
     <li>
         <method>photos.setTarget</method>
@@ -234,6 +236,7 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
             <li><b>1</b> - User`s avatar. <i>Warning: photo will be available for all users</i></li>
         </ul>
     </li>
+    <br/>
 
     <li>
         <method>photos.getTarget</method>
@@ -242,11 +245,12 @@ Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "htt
         <br/>
         You don`t write type, because type for avatar`s is 2.
         <ul>
+            <li><i>&lt;id&gt;</i> - User`s id (If -1 return information about user self)</li>
             <li><i>&lt;target&gt;</i> - Photo`s target</li>
             <li><i>&lt;token&gt;</i> - User`s token</li>
         </ul>
     </li>
-    <br>
+    <br/>
 </ul>
 </body>
 </html>

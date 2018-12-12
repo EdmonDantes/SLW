@@ -1,18 +1,20 @@
 require("./module/live_lib")("net", "userEngine", "preference", "locale");
 let server = new LiveLib.net();
-let path = LiveLib.base.getLib("path");
-let pref = new LiveLib.preference("./server.pref");
-pref.loadDataSync();
-let port = pref.get("serverPort", "8080");
-let domen = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
-let users = new LiveLib.userEngine(domen, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"));
-let folder = path.resolve("./html");
 let locale = new LiveLib.locale("./locales");
+let pref = new LiveLib.preference("./server.pref");
+
 let url = LiveLib.base.getLib("url");
 let request = LiveLib.base.getLib("request");
-let fs = LiveLib.base.getLib("fs");
+let path = LiveLib.base.getLib("path");
 
+pref.loadDataSync();
 
+let port = pref.get("serverPort", "8080");
+let ip = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
+let domen = pref.get("domen", ip);
+let folder = path.resolve("./html");
+
+let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"));
 
 LiveLib.base.createIfNotExists(folder);
 
@@ -21,8 +23,8 @@ let methods = {};
 
 methods["account.login"] = (res, callback) => users.loginUser(res.login, res.password, callback, res.remember);
 methods["account.get"] = (res, callback) => users.accountGet(res.id, res.token, callback);
-methods["account.getself"] = (res, callback) => users.accountGetSelf(res.token, callback);
 methods["account.statuswith"] = (res, callback) => users.accountStatusWith(res.id, res.token, callback);
+methods["account.edit"] = (res, callback) => users.accountEdit(res.input, res.token, callback);
 //methods["account.changepassword"] = (res, callback) => users.accountChangePassword(res.args.password, res.args.newpassword, res.args.token, callback);
 methods["blacklist.add"] = (res, callback) => users.blacklistAdd(res.id, res.token, callback);
 methods["blacklist.delete"] = (res, callback) => users.blacklistDelete(res.id, res.token, callback);
