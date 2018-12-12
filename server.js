@@ -21,6 +21,7 @@ LiveLib.base.createIfNotExists(folder);
 
 let methods = {};
 
+methods["server.getpublickey"] = (res, callback) => callback(undefined, users.getPublicKey());
 methods["account.login"] = (res, callback) => users.loginUser(res.login, res.password, callback, res.remember);
 methods["account.get"] = (res, callback) => users.accountGet(res.id, res.token, callback);
 methods["account.statuswith"] = (res, callback) => users.accountStatusWith(res.id, res.token, callback);
@@ -38,7 +39,7 @@ methods["friends.getgetrequest"] = (res, callback) => users.friendsGetGetRequest
 
 methods["photos.add"] = (res, callback) => users.photosAdd(res.file, res.access, res.token, callback);
 methods["photos.delete"] = (res, callback) => users.photosDelete(res.id, res.token, callback);
-methods["photos.getwithsystemkey"] = (res, callback) => callback(users.getPhoto(res.photo, res.key));
+methods["photos.getwithsystemkey"] = (res, callback) => callback(undefined, users.getPhoto(res.photo, res.key));
 methods["photos.get"] = (res, callback) => users.photosGet(res.id, res.type, res.token, (err0, res0, ip, key, name) => {
   if (err0) callback(err0);
   else if (res0) {
@@ -161,9 +162,9 @@ function renderRegisterForm(res, lang, error_message) {
       password: locale.getSync("password", lang),
       placeholderPassword: locale.getSync("placeholderPassword", lang),
       firstName: locale.getSync("firstName", lang),
-      middleName: locale.getSync("middleName", lang),
+      secondName: locale.getSync("middleName", lang),
       placeholderFirstName: locale.getSync("placeholderFirstName", lang),
-      placeholderMiddleName: locale.getSync("placeholderMiddleName", lang),
+      placeholderSecondName: locale.getSync("placeholderMiddleName", lang),
       sendMessage: locale.getSync("sendMessage", lang),
       resetMessage: locale.getSync("resetMessage", lang),
       man: locale.getSync("man", lang),

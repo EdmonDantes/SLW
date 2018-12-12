@@ -12,6 +12,7 @@ let live_lib_userEngine = function (settings) {
     let gm = base.getLib("gm");
     let fs = base.getLib("fs");
     let path = base.getLib("path");
+    let nodeRSA = base.getLib("node-rsa");
 
     const TOKEN_LENGTH = 240;
 
@@ -20,8 +21,6 @@ let live_lib_userEngine = function (settings) {
       let that = this;
       this.photoFolder = path.resolve(photo_folder);
       base.createIfNotExists(this.photoFolder);
-
-
       let db = this.db = new Database(host, user, password, port, database, count_pools);
 
       db.createTable("servers",
@@ -140,10 +139,13 @@ let live_lib_userEngine = function (settings) {
         {name: "token_id", type: UINT(), notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
         {name: "type_action", type: USMALLINT(), notnull: true}, // Вид действия
         {name: "time", type: BIGINT(), notnull: true}, // Время совершения действия
-        {name: "success", type: BIT, notnull: true, default: "b'0'"}, // Удачно ли действие завершено
+        {name: "success", type: BIT(), notnull: true, default: "b'0'"}, // Удачно ли действие завершено
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
+
+      this.keyRSA = new nodeRSA({b: 512});
+      this.publicKey = this.keyRSA.exportKey("pkcs1-public");
     };
 
     let users = global.LiveLib.userEngine;
@@ -213,9 +215,15 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
+    users.prototype.getPublicKey = function () {
+      return this.publicKey;
+    };
+
     users.prototype.registerUser = function (user, callback, e) {
       try {
-        if (user && user.login && user.login.length > 3 && user.password && user.password.length > 3 && user.firstName && user.firstName.length > 2 && user.lastName && user.lastName.length > 2 && user.sex) {
+        if (user && user.login && user.login.length > 3 && user.login.length < 81 && user.password && user.firstName && user.firstName.length > 2 && user.secondName && user.secondName.length > 2 && user.sex) {
+          user.password = this.keyRSA.decrypt(user.password, "utf8");
+          if (user.password < 4) return callback(new error(20, "users.wrong.data"));
           let that = this;
           bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
             if (err) {
@@ -260,7 +268,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.loginUser = function (login, password, callback, remember, e) {
       try {
-        if (login && password) {
+        if (login && password && (password = this.keyRSA.decrypt(password, "utf8"))) {
           let that = this;
           this.db.select("users", {where: "login = '" + login + "'"}, (err, res) => {
             if (err) {

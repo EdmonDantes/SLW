@@ -32,8 +32,8 @@ password: Пароль
 placeholderPassword: Ваш пароль (Например: TzZUtoc0aH6I)
 firstName: Имя
 placeholderFirstName: Ваше имя (Например: Иван)
-middleName: Фамилия
-placeholderMiddleName: Ваша фамилия (Например: Иванов)
+secondName: Фамилия
+placeholderSecondName: Ваша фамилия (Например: Иванов)
 sendMessage: Отправить
 resetMessage: Сбросить
 sex: Пол

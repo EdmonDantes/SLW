@@ -33,8 +33,8 @@ password: Password
 placeholderPassword: Your Password (Example: TzZUtoc0aH6I)
 firstName: First Name
 placeholderFirstName: Your first name (Example: John)
-middleName: Middle Name
-placeholderMiddleName: Your middle name (Example: Smith)
+secondName: Second Name
+placeholderSecondName: Your middle name (Example: Smith)
 sendMessage: Send
 resetMessage: Reset
 sex: Sex

@@ -264,8 +264,8 @@ let live_lib_database = function (settings) {
               for (let obj of tmp.unique) {
                 tmp0 += "`" + obj + "`" + ",";
               }
-              tmp0 += tmp.name;
-              req += "UNIQUE (" + tmp0 + "`),";
+              tmp0 += "`" + tmp.name + "`";
+              req += "UNIQUE (" + tmp0 + "),";
             }
 
             if (tmp.primary) {
