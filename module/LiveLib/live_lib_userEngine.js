@@ -143,9 +143,13 @@ let live_lib_userEngine = function (settings) {
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
-
-      this.keyRSA = new nodeRSA({b: 512});
-      this.publicKey = this.keyRSA.exportKey("pkcs1-public");
+      fs.readFile("./key.key", "utf8", (err, res) => {
+        if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        else {
+          that.keyRSA = new nodeRSA(JSON.parse(res));
+          that.publicKey = that.keyRSA.exportKey("pkcs1-public");
+        }
+      });
     };
 
     let users = global.LiveLib.userEngine;

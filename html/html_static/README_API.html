@@ -22,13 +22,21 @@
 Send "GET" or "POST" request to "http://DOMEN/api/&lt;method&gt;?[args]" or "http://DOMEN/&lt;lang&gt;/api/&lt;method&gt;?[args]"
 <h1>Methods</h1>
 <ul>
+
+    <li>
+        <method>server.getPublicKey</method>
+        <br/>
+        <return>Return public key for encrypt password</return>
+    </li>
+    <br/>
+
     <li>
         <method>account.login</method>
         <br/>
         <return>Return token for using api</return>
         <ul>
             <li><i>&lt;login&gt;</i> - User`s login</li>
-            <li><i>&lt;password&gt;</i> - User`s password</li>
+            <li><i>&lt;password&gt;</i> - User`s password encrypted public key</li>
             <li><i>[remember]</i> - If true, request return unlimit token</li>
         </ul>
     </li>
