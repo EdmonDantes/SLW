@@ -57,6 +57,8 @@ methods["photos.getTarget"] = (res, callback) => users.photosGetTarget(res.targe
 methods["docs"] = res => res.res.sendFile(path.join(folder, "html_static", "README_API.html"));
 methods["demo"] = res => res.res.sendFile(path.join(folder, "html_static", "test.html"));
 
+methods["js"] = res => res.res.sendFile(path.join(foldel, "js_scripts", res.file));
+
 function sendError(res, err, lang) {
   res.send({code: err.code, message: locale.getSync(err.message, lang)});
 }
