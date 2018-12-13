@@ -102,11 +102,14 @@ let live_lib_database = function (settings) {
 
         function __func006() {
           that.connection.on("error", err => {
-            if (err && err.code === "PROTOCOL_CONNECTION_LOST") {
-              that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
-            } else {
-              global.LiveLib.getLogger().errorm("Database", "Connection error => ", err);
-              that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+            if (err) {
+              that.connection = undefined;
+                if (err.code === "PROTOCOL_CONNECTION_LOST"){
+                  that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+                }else {
+                  global.LiveLib.getLogger().errorm("Database", "Connection error => ", err);
+                  that.connectTo(host, user, password, port, database, pools, callback, e, handler_end);
+                }
             }
           });
         }
