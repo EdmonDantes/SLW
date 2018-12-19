@@ -7,15 +7,15 @@ body {
     align-items: center;
 }
 
-div {
-    margin: auto;
-}
-
 h1, h2, h3 {
     text-align: center;
 }
 
-form {
+h2.error {
+    color: red;
+}
+
+div {
     width: 50vw;
     height: auto;
     margin: auto;

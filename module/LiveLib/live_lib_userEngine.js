@@ -17,7 +17,7 @@ let live_lib_userEngine = function (settings) {
     const TOKEN_LENGTH = 240;
 
 
-    global.LiveLib.userEngine = function (server_ip, host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", port = null, count_pools = 20) {
+    global.LiveLib.userEngine = function (server_ip, host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", port, count_pools = 20, callback) {
       let that = this;
       this.photoFolder = path.resolve(photo_folder);
       base.createIfNotExists(this.photoFolder);
@@ -47,14 +47,14 @@ let live_lib_userEngine = function (settings) {
 
       db.createTable("countries",
         {name: "id", type: UINT(), primary: true, autoincrement: true},
-        {name: "country", type: VARCHAR(60, true)},
+        {name: "country", type: VARCHAR(60)},
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("cities",
         {name: "id", type: UINT(), primary: true, autoincrement: true},
-        {name: "city", type: VARCHAR(85, true)},
+        {name: "city", type: VARCHAR(85)},
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -146,9 +146,10 @@ let live_lib_userEngine = function (settings) {
       fs.readFile("./key.key", "utf8", (err, res) => {
         if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         else {
-          that.keyRSA = new nodeRSA(JSON.parse(res));
-          that.publicKey = that.keyRSA.exportKey("pkcs1-public");
+          that.keyRSA = new nodeRSA(JSON.parse(res).key, "components");
+          that.publicKey = that.keyRSA.exportKey("pkcs1-public-pem");
         }
+        callback();
       });
     };
 
@@ -226,7 +227,7 @@ let live_lib_userEngine = function (settings) {
     users.prototype.registerUser = function (user, callback, e) {
       try {
         if (user && user.login && user.login.length > 3 && user.login.length < 81 && user.password && user.firstName && user.firstName.length > 2 && user.secondName && user.secondName.length > 2 && user.sex) {
-          user.password = this.keyRSA.decrypt(user.password, "utf8");
+          user.password = this.keyRSA.decrypt(user.password, "utf-8");
           if (user.password < 4) return callback(new error(20, "users.wrong.data"));
           let that = this;
           bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
@@ -272,7 +273,8 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.loginUser = function (login, password, callback, remember, e) {
       try {
-        if (login && password && (password = this.keyRSA.decrypt(password, "utf8"))) {
+        if (login && password) {
+          password = this.keyRSA.decrypt(password, "utf-8");
           let that = this;
           this.db.select("users", {where: "login = '" + login + "'"}, (err, res) => {
             if (err) {
@@ -416,26 +418,99 @@ let live_lib_userEngine = function (settings) {
       __func002(user_id, that, (err, res) => {
         if (err) callback(err);
         else {
-          callback(undefined, {
-            id: res.id,
-            login: res.login,
-            firstName: res.firstName,
-            lastName: res.lastName,
-            secondName: res.secondName,
-            sex: res.sex[0] ? "man" : "woman",
-            bdate: res.bdate,
-            city: res.city,
-            country: res.country,
-            mobile_phone: res.mobile_phone,
-            home_phone: res.home_phone,
-            size: res.site,
-            status: res.status,
-            verified: !!res.verified[0],
-            closed: !!res.closed[0],
-            screen_name: res.screen_name
-          });
+          if (res.country && res.city) {
+            that.db.select("countries", {where: "id = " + res.country}, (err0, res0) => {
+              if (err0) callback(error.serv(err0));
+              else {
+                that.db.select("cities", {where: "id = " + res.city}, (err1, res1) => {
+                  if (err1) callback(error.serv(err1));
+                  else
+                    callback(undefined, {
+                      id: res.id,
+                      login: res.login,
+                      firstName: res.firstName,
+                      lastName: res.lastName,
+                      secondName: res.secondName,
+                      sex: res.sex[0] ? "man" : "woman",
+                      bdate: res.bdate,
+                      mobile_phone: res.mobile_phone,
+                      home_phone: res.home_phone,
+                      site: res.site,
+                      status: res.status,
+                      verified: !!res.verified[0],
+                      closed: !!res.closed[0],
+                      screen_name: res.screen_name,
+                      country: res0,
+                      city: res1
+                    });
+                });
+              }
+            });
+          } else if (res.country) {
+            that.db.select("countries", {where: "id = " + res.country}, (err0, res0) => {
+              if (err0) callback(error.serv(err0));
+              else {
+                callback(undefined, {
+                  id: res.id,
+                  login: res.login,
+                  firstName: res.firstName,
+                  lastName: res.lastName,
+                  secondName: res.secondName,
+                  sex: res.sex[0] ? "man" : "woman",
+                  bdate: res.bdate,
+                  mobile_phone: res.mobile_phone,
+                  home_phone: res.home_phone,
+                  site: res.site,
+                  status: res.status,
+                  verified: !!res.verified[0],
+                  closed: !!res.closed[0],
+                  screen_name: res.screen_name,
+                  country: res0
+                });
+              }
+            });
+          } else if (res.city) {
+            that.db.select("cities", {where: "id = " + res.city}, (err1, res1) => {
+              if (err1) callback(error.serv(err1));
+              else
+                callback(undefined, {
+                  id: res.id,
+                  login: res.login,
+                  firstName: res.firstName,
+                  lastName: res.lastName,
+                  secondName: res.secondName,
+                  sex: res.sex[0] ? "man" : "woman",
+                  bdate: res.bdate,
+                  mobile_phone: res.mobile_phone,
+                  home_phone: res.home_phone,
+                  site: res.site,
+                  status: res.status,
+                  verified: !!res.verified[0],
+                  closed: !!res.closed[0],
+                  screen_name: res.screen_name,
+                  country: res0,
+                  city: res1
+                });
+            });
+          } else
+            callback(undefined, {
+              id: res.id,
+              login: res.login,
+              firstName: res.firstName,
+              lastName: res.lastName,
+              secondName: res.secondName,
+              sex: res.sex[0] ? "man" : "woman",
+              bdate: res.bdate,
+              mobile_phone: res.mobile_phone,
+              home_phone: res.home_phone,
+              site: res.site,
+              status: res.status,
+              verified: !!res.verified[0],
+              closed: !!res.closed[0],
+              screen_name: res.screen_name
+            });
         }
-      })
+      });
     }
 
     users.prototype.accountGet = function (user_id, token, callback) {
@@ -1036,28 +1111,31 @@ let live_lib_userEngine = function (settings) {
             type !== "w") {
             callback(new error(24, "photo.wrong.type"));
           } else {
-            __func005(photo_id, user.id, that, (err, res) => {
-              if (err) callback(err);
-              else if (res) {
-                if (res.server == that.id) {
-                  callback(undefined, fs.createReadStream(path.join(that.photoFolder, res.id + "_" + type)));
-                  end(true);
-                } else {
-                  that.db.select("servers", {where: "id = " + res.server}, (err0, res0) => {
-                    if (err0) {
-                      callback(error.serv(err0));
-                      end(false);
-                    } else if (res && res.length > 0 && res[0]) {
-                      callback(undefined, undefined, res0.ip, res0.key, res.id + "_" + type);
-                      end(true);
-                    } else {
-                      callback(new error(17, "photo.not.find"));
-                      end(false);
-                    }
-                  })
+            if (photo_id == -1) {
+              callback(undefined, fs.createReadStream(path.join(that.folder, images, "not_photo_" + type)));
+            } else
+              __func005(photo_id, user.id, that, (err, res) => {
+                if (err) callback(err);
+                else if (res) {
+                  if (res.server == that.id) {
+                    callback(undefined, fs.createReadStream(path.join(that.photoFolder, res.id + "_" + type)));
+                    end(true);
+                  } else {
+                    that.db.select("servers", {where: "id = " + res.server}, (err0, res0) => {
+                      if (err0) {
+                        callback(error.serv(err0));
+                        end(false);
+                      } else if (res && res.length > 0 && res[0]) {
+                        callback(undefined, undefined, res0.ip, res0.key, res.id + "_" + type);
+                        end(true);
+                      } else {
+                        callback(new error(17, "photo.not.find"));
+                        end(false);
+                      }
+                    })
+                  }
                 }
-              }
-            });
+              });
           }
         }
       });

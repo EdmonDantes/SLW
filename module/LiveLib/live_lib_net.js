@@ -29,9 +29,6 @@ let live_lib_net = function (settings) {
     this.app.use(body_parser.json());
     this.app.use(fileupload());
     this.app.use(host, this.router);
-    this.server = this.app.listen(process.env.PORT || port || 8080, () => {
-      global.LiveLib.getLogger().info("Server started with port : ", process.env.PORT || port || 8080);
-    });
   };
 
   let Server = global.LiveLib.net;
@@ -153,6 +150,13 @@ let live_lib_net = function (settings) {
     }
     return false;
   };
+
+  Server.prototype.start = function () {
+    let port = process.env.PORT || this.port || 8080;
+    this.server = this.app.listen(port, () => {
+      global.LiveLib.getLogger().info("Server started with port : ", port);
+    });
+  }
 };
 
 module.exports = live_lib_net;

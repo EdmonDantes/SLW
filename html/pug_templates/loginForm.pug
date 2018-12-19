@@ -2,25 +2,42 @@ html
     head
         style
             include ../css/registerForm.css
+        script(src="/api/js?file=rsa.js")
+        script(src="/api/js?file=base.js")
+        script.
+          Base.reset(["login", "password"], ["remember"]);
+          Base.createSendFunction("/login", {
+            login: {},
+            password: {
+              check: function (value, callback) {
+                Base.encrypt(value, callback);
+              }
+            },
+            remember: {
+              check: function (value, callback) {
+                callback(undefined, !!value);
+              }
+            }
+          });
     body
-        div
-            h1 Login Form
-                if (have_error)
-                    h2(style='color:red') #{error_message}
-            form(name='login' action='' method='post')
-                p
-                    b #{login}
-                    br
-                    input(name='login' type='text' placeholder=placeholderLogin required)
-                p
-                    b #{password}
-                    br
-                    input(name='password' type='password' placeholder=placeholderPassword required)
-                p
-                    input(name='remember' type='checkbox')
-                    a #{remember}
-                    br
-                p
-                    input(type='submit' value=log_in)
-                p
-                    input(type='reset' value=resetMessage)
+        div(id="loading" hidden)
+            h1 #{loading}
+        div(id="main")
+            h1 #{loginForm}
+            h2(id="error" hidden)
+            p
+                b #{login}
+                br
+                input(id='login' name='login' type='text' placeholder=placeholderLogin required)
+            p
+                b #{password}
+                br
+                input(id='password' name='password' type='password' placeholder=placeholderPassword required)
+            p
+                input(id='remember' name='remember' type='checkbox')
+                a #{remember}
+                br
+            p
+                input(type='button' value=log_in onclick="send()")
+            p
+                input(type='button' value=resetMessage onclick="reset()")

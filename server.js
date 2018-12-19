@@ -6,6 +6,7 @@ let pref = new LiveLib.preference("./server.pref");
 let url = LiveLib.base.getLib("url");
 let request = LiveLib.base.getLib("request");
 let path = LiveLib.base.getLib("path");
+let fs = LiveLib.base.getLib("fs");
 
 pref.loadDataSync();
 
@@ -14,19 +15,20 @@ let ip = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
 let domen = pref.get("domen", ip);
 let folder = path.resolve("./html");
 
-let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"));
+let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"), undefined, undefined, () => {
+  server.start();
+});
 
 LiveLib.base.createIfNotExists(folder);
 
-
 let methods = {};
 
-methods["server.getpublickey"] = (res, callback) => callback(undefined, users.getPublicKey());
+methods["server.getPublicKey"] = (res, callback) => callback(undefined, users.getPublicKey());
 methods["account.login"] = (res, callback) => users.loginUser(res.login, res.password, callback, res.remember);
 methods["account.get"] = (res, callback) => users.accountGet(res.id, res.token, callback);
-methods["account.statuswith"] = (res, callback) => users.accountStatusWith(res.id, res.token, callback);
+methods["account.statusWith"] = (res, callback) => users.accountStatusWith(res.id, res.token, callback);
 methods["account.edit"] = (res, callback) => users.accountEdit(res.input, res.token, callback);
-//methods["account.changepassword"] = (res, callback) => users.accountChangePassword(res.args.password, res.args.newpassword, res.args.token, callback);
+
 methods["blacklist.add"] = (res, callback) => users.blacklistAdd(res.id, res.token, callback);
 methods["blacklist.delete"] = (res, callback) => users.blacklistDelete(res.id, res.token, callback);
 methods["blacklist.get"] = (res, callback) => users.blacklistGet(res.token, callback);
@@ -34,8 +36,8 @@ methods["blacklist.get"] = (res, callback) => users.blacklistGet(res.token, call
 methods["friends.add"] = (res, callback) => users.friendsAdd(res.id, res.token, callback);
 methods["friends.delete"] = (res, callback) => users.friendsDelete(res.id, res.token, callback);
 methods["friends.get"] = (res, callback) => users.friendsGet(res.id, res.token, callback);
-methods["friends.getsendrequest"] = (res, callback) => users.friendsGetSendRequest(res.token, callback);
-methods["friends.getgetrequest"] = (res, callback) => users.friendsGetGetRequest(res.token, callback);
+methods["friends.getSendRequest"] = (res, callback) => users.friendsGetSendRequest(res.token, callback);
+methods["friends.getGetRequest"] = (res, callback) => users.friendsGetGetRequest(res.token, callback);
 
 methods["photos.add"] = (res, callback) => users.photosAdd(res.file, res.access, res.token, callback);
 methods["photos.delete"] = (res, callback) => users.photosDelete(res.id, res.token, callback);
@@ -59,94 +61,103 @@ methods["demo"] = res => res.res.sendFile(path.join(folder, "html_static", "test
 
 methods["js"] = res => res.res.sendFile(path.join(folder, "js_scripts", res.file));
 
+
 function sendError(res, err, lang) {
-  res.send({code: err.code, message: locale.getSync(err.message, lang)});
+  res.send({error: {code: err.code, message: locale.getSync(err.message, lang)}});
 }
 
-function __func000(res) { //function for execute method
-  if (res && res.params && res.params.method) {
-    if (methods[res.params.method.toLowerCase()]) {
-      try {
-        let input = {};
-        for (let [key, value] of Object.entries(res.args)) {
-          input[key] = value;
-        }
-        if (res.files) {
-          try {
-            input.file = Object.entries(res.files)[0][1];
-          } catch (err) {
-          }
-        }
-        input.res = res.res;
-        if (res.body) {
-          try {
-            let body = JSON.parse(res.body);
-            for (let [key, value] of Object.entries(body)) {
-              input[key] = value;
-            }
-          } catch (err) {
-          }
-        }
-        methods[res.params.method.toLowerCase()](input, (err0, res0) => {
-          if (err0) sendError(res.res, err0, res.args.lang || res.params.lang);
-          else if (res0) {
-            res.res.send({response: res0});
-          } else res.res.send({response: true});
-        });
-      } catch (err) {
-        sendError(res.res, {code: 1, message: "server.error"}, res.args.lang || res.params.lang)
-      }
-    } else {
-      sendError(res.res, {code: 21, message: "method.not.find"}, res.args.lang || res.params.lang);
-    }
-  } else {
-    res.res.send({
-      name: "Api",
-      versionServer: 1.2,
-      versionApi: 1.0,
-      message: "Please use '" + domen + "/api/<method>?[args]'"
+let pages = {};
+
+pages["join"] = (res, callback) => {
+  if (res.token) {
+    res.res.header("Location", "/");
+    res.res.sendStatus(303);
+  } else
+    callback(undefined, {
+      "$$name": path.join(folder, "pug_templates", "registerForm"),
+      login: "login",
+      placeholderLogin: "placeholderLogin",
+      password: "password",
+      placeholderPassword: "placeholderPassword",
+      firstName: "firstName",
+      secondName: "secondName",
+      placeholderFirstName: "placeholderFirstName",
+      placeholderSecondName: "placeholderSecondName",
+      sendMessage: "sendMessage",
+      resetMessage: "resetMessage",
+      man: "man",
+      woman: "woman",
+      sex: "sex",
+      loading: "loading",
+      registerForm: "registerForm",
+      wrongLogin: "users.wrong.login",
+      wrongPassword: "users.wrong.password",
+      fName: "fName",
+      sName: "sName"
     });
+};
+
+pages["login"] = (res, callback) => {
+  if (res.token) {
+    res.res.header("Location", "/");
+    res.res.sendStatus(303);
+  } else
+    callback(undefined, {
+      "$$name": path.join(folder, "pug_templates", "loginForm.pug"),
+      login: "login",
+      placeholderLogin: "placeholderLogin",
+      password: "password",
+      placeholderPassword: "placeholderPassword",
+      resetMessage: "resetMessage",
+      log_in: "log_in",
+      remember: "remember",
+      loginForm: "loginForm"
+    });
+};
+
+pages["reset"] = (res, callback) => {
+  res.res.cookie("token", "");
+  res.res.header("Location", "/");
+  res.res.sendStatus(303);
+};
+
+pages["user:id"] = (res) => {
+  if (res.token) {
+    renderUserForm(res.res, res["__params"].id, res.token, res.lang);
+  } else {
+    res.res.header("Location", "/");
+    res.res.sendStatus(303);
   }
+};
+
+pages[""] = (res, callback) => {
+  if (res.token) {
+    renderUserForm(res.res, -1, res.token, res.lang, callback);
+  } else {
+    renderMainForm(res.res, res.lang);
+  }
+};
+
+
+function render(res, tmp, lang) {
+  let name = tmp["$$name"];
+  tmp["$$name"] = undefined;
+  let object = {};
+  for (let [key, value] of Object.entries(tmp)) {
+    if (key[0] === "$")
+      object[key.substr(1)] = value;
+    else
+      object[key] = locale.getSync(value, lang);
+  }
+  res.render(name, object);
 }
 
-server.get("/:lang/api/:method", (res) => {
-  __func000(res);
-});
-
-server.get("/api/:method", (res) => {
-  __func000(res);
-});
-
-server.post("/api/:method", (res) => {
-  __func000(res);
-});
-
-server.post("/:lang/api/:method", (res) => {
-  __func000(res);
-});
-
-
-
-
-
-function checkError(err, res) {
-  if (err) {
-    if (err.code === 4 || err.code === 9) {
-      res.res.cookie("token", "");
-      res.res.header("Location", "/");
-      res.res.sendStatus(303);
-    } else if (err.message) {
-      locale.get(err.message, res.args.lang, (err1, res1) => {
-        if (res1) {
-          err.message = res1;
-          res.res.render(path.join(folder, "errorForm.pug"), err);
-        }
-      });
-    } else {
-      res.res.render(path.join(folder, "errorForm.pug"), err);
-    }
-  }
-  return !!err;
+function renderError(res, err, lang) {
+  render(res, {
+    "$$name": path.join(folder, "pug_templates", "errorForm.pug"),
+    "$code": err.code,
+    message: err.message
+  }, lang);
 }
 
 function renderMainForm(res, lang) {
@@ -157,142 +168,194 @@ function renderMainForm(res, lang) {
   });
 }
 
-function renderRegisterForm(res, lang, error_message) {
-  res.render(path.join(folder, "registerForm.pug"),
-    {
-      login: locale.getSync("login", lang),
-      placeholderLogin: locale.getSync("placeholderLogin", lang),
-      password: locale.getSync("password", lang),
-      placeholderPassword: locale.getSync("placeholderPassword", lang),
-      firstName: locale.getSync("firstName", lang),
-      secondName: locale.getSync("middleName", lang),
-      placeholderFirstName: locale.getSync("placeholderFirstName", lang),
-      placeholderSecondName: locale.getSync("placeholderMiddleName", lang),
-      sendMessage: locale.getSync("sendMessage", lang),
-      resetMessage: locale.getSync("resetMessage", lang),
-      man: locale.getSync("man", lang),
-      woman: locale.getSync("woman", lang),
-      sex: locale.getSync("sex", lang),
-      have_error: !!error_message,
-      error_message: error_message
-    });
+function renderUserForm(res, id, token, lang, callback) {
+  users.accountGet(id, token, (err0, res0) => {
+    if (err0) {
+      if (callback) callback(err0);
+      else renderError(res, err0, lang);
+    } else {
+      res0.sexText = locale.getSync("sexText", lang);
+      res0.bdateText = locale.getSync("bdateText", lang);
+      res0.sex = locale.getSync(res0.sex, lang);
+      res0.account = locale.getSync("account", lang);
+      res0.friends = locale.getSync("friends", lang);
+      res.render(path.join(folder, "pug_templates", "userForm.pug"), res0);
+    }
+  });
 }
 
-function renderUserForm(res, token, user) {
-  res.render(path.join(folder, "userForm.pug"), user);
-}
+function __func009(tmp, res) {
+  if (tmp && tmp.length > 0) {
+    if (tmp.indexOf("favicon.ico") > -1) {
+      fs.createReadStream(path.join(folder, "images", "page_icon.png")).pipe(res.res);
+      return;
+    }
 
-function renderLoginFrom(res, lang, error_message) {
-  res.render(path.join(folder, "pug_templates", "loginForm.pug"),
-    {
-      login: locale.getSync("login", lang),
-      placeholderLogin: locale.getSync("placeholderLogin", lang),
-      password: locale.getSync("password", lang),
-      placeholderPassword: locale.getSync("placeholderPassword", lang),
-      resetMessage: locale.getSync("resetMessage", lang),
-      log_in: locale.getSync("log_in", lang),
-      remember: locale.getSync("remember", lang),
-      have_error: !!error_message,
-      error_message: error_message
-    });
-}
+    let input = {
+      token: res.cookies.token,
+      res: res.res
+    };
+    for (let [key, value] of Object.entries(res.args)) {
+      input[key] = value;
+    }
 
-
-server.get("/", (res) => {
-  if (res.cookies.token) {
-    users.accountGetSelf(res.cookies.token, (err0, res0) => {
-      if (!checkError(err0, res)) {
-        renderUserForm(res.res, res.cookies.token, res0);
+    if (res.files) {
+      try {
+        input.file = Object.entries(res.files)[0][1];
+      } catch (err) {
       }
-    });
+    }
+    input.res = res.res;
+    if (res.body) {
+      try {
+        let body = (typeof res.body === "string" || res.body instanceof String) ? JSON.parse(res.body) : res.body;
+        for (let [key, value] of Object.entries(body)) {
+          input[key] = value;
+        }
+      } catch (err) {
+      }
+    }
+
+    if (tmp[0] === "api" || tmp[1] === "api") {
+      let index = 1;
+      let lang = -1;
+      if (tmp[1] === "api") {
+        lang++;
+        index++;
+      }
+
+      if (tmp[index]) {
+        if (methods[tmp[index]]) {
+
+          input["__params"] = tmp.slice(index);
+          input.lang = tmp[lang];
+
+          methods[tmp[index]](input, (err0, res0) => {
+            if (err0) sendError(res.res, err0, lang > -1 ? tmp[lang] : undefined);
+            else if (res0) {
+              res.res.send({response: res0});
+            } else res.res.send({response: true});
+          });
+        } else {
+          sendError(res.res, {code: 21, message: "method.not.find"}, lang > -1 ? tmp[lang] : undefined);
+        }
+      } else {
+        res.res.send({
+          name: "Api",
+          versionServer: 1.2,
+          versionApi: 1.0,
+          message: "Please use '" + domen + "/api/<method>?[args]'"
+        });
+      }
+    } else {
+      let index = 0;
+      let lang = -1;
+      if (tmp.length > 1) lang = index++;
+
+      input["__params"] = {};
+      input.lang = tmp[lang];
+
+      if (pages[tmp[index]]) {
+        try {
+          pages[tmp[index]](input, (err0, res0) => {
+            if (err0) {
+              if (err0.code == 9) {
+                res.res.cookie("token", "");
+                res.res.header("Location", "/");
+                res.res.sendStatus(303);
+              } else renderError(res.res, {code: 1, message: "server.error"}, lang > -1 ? tmp[lang] : undefined);
+            } else if (res0) {
+              render(res.res, res0, lang > -1 ? tmp[lang] : undefined);
+            }
+          });
+        } catch (err) {
+          global.LiveLib.getLogger().errorm("Server.js", "__func009 => ", err);
+          renderError(res.res, {code: 1, message: "server.error"}, lang > -1 ? tmp[lang] : undefined);
+        }
+        return;
+      } else
+        for (let [key, value] of Object.entries(pages)) {
+          let i = 0;
+          while (key[i] === tmp[index][i] && i < key.length && i < tmp[index].length)
+            i++;
+          if (key[i] === ":") {
+            input["__params"][key.substr(i + 1)] = tmp[index].substr(i);
+            try {
+              value(input, (err0, res0) => {
+                if (err0) renderError(res.res, {code: 1, message: "server.error"}, lang > -1 ? tmp[lang] : undefined);
+                else if (res0) {
+                  render(res.res, res0, lang > -1 ? tmp[lang] : undefined);
+                }
+              });
+            } catch (err) {
+              global.LiveLib.getLogger().errorm("Server.js", "__func009 => ", err);
+              renderError(res.res, {code: 1, message: "server.error"}, lang > -1 ? tmp[lang] : undefined);
+            }
+            return;
+          }
+        }
+      renderError(res.res, {code: 404, message: "code404"}, tmp.length > 1 ? tmp[1] : tmp[0]);
+    }
   } else {
-    renderMainForm(res.res, res.args.lang);
+    if (res.cookies && res.cookies.token) {
+      renderUserForm(res.res, -1, res.cookies.token, undefined, (err) => {
+        if (err.code == 9) {
+          res.res.cookie("token", "");
+          renderMainForm(res.res);
+        } else {
+          renderError(res.res, err);
+        }
+      });
+    } else {
+      renderMainForm(res.res);
+    }
   }
+}
+
+server.get("/*", (res) => {
+  if (!res.params[0]) res.params[0] = "";
+  let tmp = res.params[0].split("/");
+  __func009(tmp, res);
 });
 
-server.get("/login", (res) => {
+server.post("/join", (res) => {
   if (res.cookies.token) {
-    res.res.header("Location", domen);
-    res.res.sendStatus(303);
+    res.res.send({response: {code: 303, direction: "/"}});
   } else {
-    renderLoginFrom(res.res, res.args.lang);
+    try {
+      users.registerUser(res.body, (err0, res0) => {
+        if (err0) {
+          global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err0);
+          sendError(res.res, err0);
+        } else {
+          res.res.cookie("token", res0);
+          res.res.send({response: {code: 303, direction: "/"}});
+        }
+      });
+    } catch (err) {
+      global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err);
+      sendError(res.res, {code: 1, message: "server.error"});
+    }
   }
 });
 
 server.post("/login", (res) => {
   if (res.cookies.token) {
-    res.res.header("Location", domen);
-    res.res.sendStatus(303);
+    res.res.send({response: {code: 303, direction: "/"}});
   } else {
-    users.loginUser(res.body.login, res.body.password, (err, res0) => {
-      if (err) {
-        renderLoginFrom(res.res, res.args.lang, locale.getSync(err.message, res.args.lang));
-      } else {
-        res.res.cookie("token", res0);
-        res.res.header("Location", domen);
-        res.res.sendStatus(303);
-      }
-    });
-  }
-});
-
-server.get("/reset", (res) => {
-  res.res.cookie("token", "");
-  res.res.header("Location", domen);
-  res.res.sendStatus(200);
-});
-
-server.get("/join", (res) => {
-  if (res.cookies.token) {
-    res.res.header("Location", domen);
-    res.res.sendStatus(303);
-  } else {
-    renderRegisterForm(res.res, res.args.lang);
-  }
-});
-
-server.post("/join", (res) => {
-  if (res.cookies.token) {
-    res.res.header("Location", domen);
-    res.res.sendStatus(303);
-  } else {
-    users.registerUser(res.body, (err, res0) => {
-      if (err) {
-        renderRegisterForm(res.res, res.args.lang, "Wrong users data");
-      } else {
-        res.res.cookie("token", res0);
-        res.res.header("Location", domen);
-        res.res.sendStatus(303);
-      }
-    });
-  }
-});
-
-server.get("/user:id", (res) => {
-  if (res.cookies.token && res.params && res.params.id) {
-    users.accountGet(res.params.id, res.cookies.token, (err0, res0) => {
-      if (!checkError(err0, res)) {
-        res.res.render(path.join(folder, "userForm.pug"), res0);
-      }
-    });
-  } else {
-    res.res.render(path.join(folder, "errorForm.pug"), {
-      code: 20,
-      message: locale.getSync("request.have.not.token", res.args.lang)
-    });
-  }
-});
-
-server.get("/method/:args", (res) => {
-  if (res.args && methods.get(res.args)) {
-    methods.get(res.args)(res.query, (err0, res0) => {
-      if (err0) {
-        res.res.send({error: {code: err0.code, message: locale.getSync(err0.message, res.query.lang)}});
-      } else {
-        res.res.send({response: res0});
-      }
-    });
-  } else {
-    res.res.send({error: {code: 21, message: locale.getSync("method.is.not.have", res.query.lang)}});
+    try {
+      users.loginUser(res.body.login, res.body.password, (err0, res0) => {
+        if (err0) {
+          global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err0);
+          sendError(res.res, err0);
+        } else {
+          res.res.cookie("token", res0);
+          res.res.send({response: {code: 303, direction: "/"}});
+        }
+      }, res.body.remember);
+    } catch (err) {
+      global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/login\") => ", err);
+      sendError(res.res, {code: 1, message: "server.error"});
+    }
   }
 });

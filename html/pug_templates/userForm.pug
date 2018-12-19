@@ -1,0 +1,42 @@
+// User info form
+html
+    head
+        style
+            include ../css/userFrom.css
+        script(src="/api/js?file=rsa.js")
+        script(src="/api/js?file=base.js")
+    body
+        div.divide
+            div.left
+                input.menu(id="friends" type="button" value=friends onclick="showFriends()")
+            div.right
+                if (lastName)
+                    p #{firstName} #{secondName} #{lastName}
+                else
+                    p #{firstName} #{secondName}
+                if (status)
+                    h2 #{status}
+                    br
+                p #{sexText}: #{sex}
+                br
+                if (bdate)
+                    h3 #{bdateText}: #{bdate}
+                    br
+                if (country)
+                    h3 #{country}
+                    br
+                if (city)
+                    h3 #{city}
+                    br
+                if (mobile_phone)
+                    h3 #{mobile_phone}
+                    br
+                if (home_phone)
+                    h3 #{home_phone}
+                    br
+                if (site)
+                    h3 #{site}
+                    br
+                if (verified)
+                    h3 #{verifiedText}
+                    br
