@@ -61,7 +61,8 @@ Base = {
   },
 
   sendRequestToServer: function (method, object, callback, lang, post, post_object) {
-    object.crossDomenRequest = true;
+    if (object) object.crossDomenRequest = true;
+    else object = {crossDomenRequest: true};
     this.sendRequest("api/" + method, object, undefined, callback, lang, post_object);
   },
 
