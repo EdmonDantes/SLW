@@ -22,6 +22,11 @@ let live_lib_userEngine = function (settings) {
       this.photoFolder = path.resolve(photo_folder);
       base.createIfNotExists(this.photoFolder);
       let db = this.db = new Database(host, user, password, port, database, count_pools);
+      this.status = 0;
+      this.addLoaded = function () {
+        if (this.status > 1) callback();
+        else this.status++;
+      };
 
       db.createTable("servers",
         {name: "id", type: UTYNYINT(), notnull: true, autoincrement: true, primary: true},
@@ -32,15 +37,20 @@ let live_lib_userEngine = function (settings) {
         });
 
       db.select("servers", {where: "ip = '" + server_ip + "'"}, (err, res) => {
-        if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        if (err) {
+          global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+          that.addLoaded();
+        }
         else if (res.length > 0) {
           that.id = res[0].id;
           that.key = res[0].key;
+          that.addLoaded();
         } else {
           that.key = base.createRandomString(255);
           db.insert("servers", {ip: server_ip, key: that.key}, (err, res) => {
             if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
             else if (res) that.id = res.insertId;
+            that.addLoaded();
           });
         }
       });
@@ -80,6 +90,7 @@ let live_lib_userEngine = function (settings) {
         {name: "verified", type: BIT(), default: "b'0'"}, // Верифицированна ли страница
         {name: "banned", type: BIT(), default: "b'0'"}, // Забанена ли страница
         {name: "deleted", type: BIT(), default: "b'0'"}, // Удалена ли страница
+        {name: "balance", type: UINT(), notnull: true, default: "0"},
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -142,6 +153,7 @@ let live_lib_userEngine = function (settings) {
         {name: "success", type: BIT(), notnull: true, default: "b'0'"}, // Удачно ли действие завершено
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+          that.addLoaded();
         });
       fs.readFile("./key.key", "utf8", (err, res) => {
         if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
@@ -149,7 +161,7 @@ let live_lib_userEngine = function (settings) {
           that.keyRSA = new nodeRSA(JSON.parse(res).key, "components");
           that.publicKey = that.keyRSA.exportKey("pkcs1-public-pem");
         }
-        callback();
+        that.addLoaded();
       });
     };
 
@@ -226,41 +238,65 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.registerUser = function (user, callback, e) {
       try {
-        if (user && user.login && user.login.length > 3 && user.login.length < 81 && user.password && user.firstName && user.firstName.length > 2 && user.secondName && user.secondName.length > 2 && user.sex) {
-          user.password = this.keyRSA.decrypt(user.password, "utf-8");
-          if (user.password < 4) return callback(new error(20, "users.wrong.data"));
-          let that = this;
-          bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
-            if (err) {
-              if (callback) callback(error.serv(err));
-            } else {
-              bcrypt.hash(user.password, salt, (err0, hash) => {
-                if (err0) {
-                  if (callback) callback(error.serv(err0));
-                } else {
-                  user.passwordSalt = salt;
-                  user.password = hash;
-                  user.sex = user.sex === "man" ? 1 : 0;
-                  this.db.insert("users", user, (err1, res) => {
-                    if (err1 && err1[0]) {
-                      if (callback) {
-                        switch (err1[0].code) {
-                          case 1062:
-                            callback(new error(2, "users.wrong.login", err1[0]));
-                            break;
-                          default:
-                            callback(error.serv(err1[0]));
-                            break;
+        if (user) {
+          if (user.login && user.login.length > 3) {
+            if (user.firstName && user.firstName.length > 2) {
+              if (user.secondName && user.secondName.length > 2) {
+                if (user.sex !== undefined && user.sex !== null && (typeof user.sex === "string" || user.sex instanceof String)) {
+                  if (user.password) {
+                    user.password = this.keyRSA.decrypt(user.password, "utf-8");
+                    if (user.password > 3) {
+                      let that = this;
+                      bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
+                        if (err) {
+                          if (callback) callback(error.serv(err));
+                        } else {
+                          bcrypt.hash(user.password, salt, (err0, hash) => {
+                            if (err0) {
+                              if (callback) callback(error.serv(err0));
+                            } else {
+                              user.passwordSalt = salt;
+                              user.password = hash;
+                              user.sex = user.sex.toLowerCase() === "man" ? 1 : 0;
+                              this.db.insert("users", user, (err1, res) => {
+                                if (err1 && err1[0]) {
+                                  if (callback) {
+                                    switch (err1[0].code) {
+                                      case 1062:
+                                        callback(new error(2, "users.wrong.login", err1[0]));
+                                        break;
+                                      default:
+                                        callback(error.serv(err1[0]));
+                                        break;
+                                    }
+                                  }
+                                } else {
+                                  that.createToken(res[0].insertId, -1, -1, callback);
+                                }
+                              });
+                            }
+                          });
                         }
-                      }
+                      });
                     } else {
-                      that.createToken(res[0].insertId, -1, -1, callback);
+                      callback(new error(3, "users.wrong.password"));
                     }
-                  });
+                  } else {
+                    callback(new error(3, "users.wrong.password"));
+                  }
+
+                } else {
+                  callback(new error(29, "users.wrong.sex"));
                 }
-              });
+              } else {
+                callback(new error(28, "users.wrong.second.name"));
+              }
+            } else {
+              callback(new error(27, "users.wrong.second.name"));
             }
-          });
+          } else {
+            callback(new error(2, "users.wrong.login"));
+          }
         } else {
           callback(new error(20, "users.wrong.data"));
         }
@@ -279,19 +315,20 @@ let live_lib_userEngine = function (settings) {
           this.db.select("users", {where: "login = '" + login + "'"}, (err, res) => {
             if (err) {
               if (callback) callback(error.serv(err));
-            } else {
+            } else if (res && res.length > 0 && res[0]) {
               let obj = res[0];
               bcrypt.hash(password, obj.passwordSalt, (err0, res0) => {
                 if (err0) {
                   if (callback) callback(error.serv(err0));
                 } else if (obj.password === res0) {
                   that.createToken(obj.id, -1, remember ? -1 : 3600000, callback);
-                } else callback(new error(3, "users.wrong.password"));
+                } else callback(new error(30, "users.wrong.login.or.password"));
               });
+            } else {
+              callback(new error(30, "users.wrong.login.or.password"));
             }
           });
-          return true;
-        } else callback(new error(22, "api.wrong.arguments"))
+        } else callback(new error(20, "users.wrong.data"));
       } catch (err) {
         if (e) throw err;
         else if (callback) callback(error.serv(err));
@@ -395,7 +432,7 @@ let live_lib_userEngine = function (settings) {
               tmp = "all_black";
           }
           callback(undefined, tmp);
-        } else callback(undefined, "none");
+        } else callback(undefined, "null");
       });
     }
 
@@ -465,7 +502,8 @@ let live_lib_userEngine = function (settings) {
                   verified: !!res.verified[0],
                   closed: !!res.closed[0],
                   screen_name: res.screen_name,
-                  country: res0
+                  country: res0,
+                  balance: res.balance
                 });
               }
             });
@@ -489,7 +527,8 @@ let live_lib_userEngine = function (settings) {
                   closed: !!res.closed[0],
                   screen_name: res.screen_name,
                   country: res0,
-                  city: res1
+                  city: res1,
+                  balance: res.balance
                 });
             });
           } else
@@ -507,7 +546,8 @@ let live_lib_userEngine = function (settings) {
               status: res.status,
               verified: !!res.verified[0],
               closed: !!res.closed[0],
-              screen_name: res.screen_name
+              screen_name: res.screen_name,
+              balance: res.balance
             });
         }
       });
@@ -537,8 +577,13 @@ let live_lib_userEngine = function (settings) {
                     callback(err0);
                     end(false);
                   } else {
+                    res0.balance = undefined;
                     if (res0.closed[0] && res !== "friend") callback(new error(12, "users.closed"));
                     else {
+                      if (res !== "in_black" && res !== "all_black") res0.canAddToBlack = true;
+                      if (res === "in_black" || res === "all_black") res0.canDeleteFromBlack = true;
+                      if (res !== "friend" && res !== "sendRequest") res0.canAddToFriend = true;
+                      else res0.canDeleteFromFriend = true;
                       callback(undefined, res0);
                     }
                     end(!res0.closed[0] || (res0.closed[0] && res === "friend"));
@@ -597,7 +642,7 @@ let live_lib_userEngine = function (settings) {
             callback(err);
             end(false);
           } else {
-            if (!res) {
+            if (!res || res === "null") {
               that.db.insert("relations", {
                 user_id_1: Math.min(user.id, user_id),
                 user_id_2: Math.max(user.id, user_id),
@@ -644,7 +689,7 @@ let live_lib_userEngine = function (settings) {
             if (res === "all_black") {
               that.db.update("relations", {
                 status: user_id < user.id ? 4 : 5,
-                where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
+                "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
               }, err0 => {
                 if (err0) callback(error.serv(err0));
                 else callback(undefined);
@@ -653,7 +698,7 @@ let live_lib_userEngine = function (settings) {
             } else if (res === "in_black") {
               that.db.update("relations", {
                 status: 3,
-                where: "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
+                "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND user_id_2 = " + Math.max(user_id, user.id)
               }, err0 => {
                 if (err0) callback(error.serv(err0));
                 else callback(undefined);
@@ -698,7 +743,7 @@ let live_lib_userEngine = function (settings) {
               func(false);
             } else {
               if (res) {
-                if (res === user_id < user.id ? 1 : 2) {
+                if (res === (user_id < user.id ? 1 : 2)) {
                   that.db.update("relations", {
                     status: 0,
                     "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
@@ -707,9 +752,18 @@ let live_lib_userEngine = function (settings) {
                     else callback(undefined);
                     func(!err);
                   });
-                } else if (res === user_id < user.id ? 4 : 5 || res === 6) {
+                } else if (res === 3) {
+                  that.db.update("relations", {
+                    status: user_id < user.id ? 2 : 1,
+                    "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
+                  }, err => {
+                    if (err) callback(error.serv(err));
+                    else callback(undefined);
+                    func(!err);
+                  });
+                } else if (res === (user_id < user.id ? 4 : 5) || res === 6) {
                   callback(new error(11, "users.in.black"));
-                } else if (res === user_id < user_id ? 4 : 5) {
+                } else if (res === (user_id < user_id ? 4 : 5)) {
                   callback(new error(14, "users.in.your.black"));
                 }
               } else {
@@ -737,7 +791,7 @@ let live_lib_userEngine = function (settings) {
             if (err) {
               callback(error.serv(err));
               func(false);
-            } else if (res) {
+            } else if (res !== null && res !== undefined) {
               if (res === 0) {
                 that.db.update("relations", {
                   status: user_id < user.id ? 1 : 2,
@@ -747,7 +801,7 @@ let live_lib_userEngine = function (settings) {
                   else callback(undefined);
                   func(!err);
                 });
-              } else if (res === user_id < user.id ? 2 : 1) {
+              } else if (res === (user_id < user.id ? 2 : 1)) {
                 that.db.update("relations", {
                   status: 3,
                   "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
@@ -1202,8 +1256,8 @@ let live_lib_userEngine = function (settings) {
                 callback(undefined, res[0].photo_id);
                 end(true);
               } else {
-                callback(new error(26, "photo.not.find.target"));
-                end(false);
+                callback(undefined, -1);
+                end(true);
               }
             });
             break;

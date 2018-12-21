@@ -45,8 +45,8 @@ let live_lib_locale = function () {
       map.set(locale, tmp);
       return true;
     } catch (err) {
-      if (e) throw err;
-      else logger.errorm("Locale", "loadLocaleFromFileSync => ", err);
+      global.LiveLib.getLogger().debugm("Locale", "loadLocaleFromFileSync() => ", err);
+      return false;
     }
   };
 
@@ -64,9 +64,10 @@ let live_lib_locale = function () {
       let local = this.locales.get(locale ? locale : "en-US");
       if (!local) {
         this.loadLocaleFromFile(locale, (err, res) => {
-          if (err) callback(err);
-          local = res;
-          result(local);
+          if (err) result("en-US");
+          else {
+            result(res);
+          }
         }, true);
       } else result(local);
       return true;
@@ -82,12 +83,10 @@ let live_lib_locale = function () {
     try {
       if (!locale) locale = "en-US";
       let local = this.locales.get(locale);
-      if (!local) {
-        this.loadLocaleFromFileSync(locale, true);
+      if (!local && this.loadLocaleFromFileSync(locale)) {
         local = this.locales.get(locale);
       }
-      let tmp = local.get(string, null, true);
-      return tmp ? tmp : (locale !== "en-US" ? this.getSync(string, "en-US", true) : string);
+      return local ? local.get(string, string, true) : (locale !== "en-US" ? this.getSync(string, "en-US", true) : string);
     } catch (err) {
       if (e) throw err;
       else logger.errorm("Locale", "get => ", err);

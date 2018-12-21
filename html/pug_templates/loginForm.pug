@@ -1,12 +1,13 @@
 html
     head
+        title #{title}
         style
             include ../css/registerForm.css
         script(src="/api/js?file=rsa.js")
         script(src="/api/js?file=base.js")
         script.
           Base.reset(["login", "password"], ["remember"]);
-          Base.createSendFunction("/login", {
+          Base.createSendFunction("/postlogin", {
             login: {},
             password: {
               check: function (value, callback) {

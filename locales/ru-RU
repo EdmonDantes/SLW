@@ -23,28 +23,46 @@ api.wrong.arguments: Неправильные аргументы в запрос
 users.have.not.permissions: У вас нет прав на это
 photo.wrong.type: Неправильный тип для фото
 photo.wrong.target: Неправильная цель для фото
-
+photo.not.find.target: Фото не найдено
+users.wrong.first.name: Неправильное имя
+users.wrong.second.name: Неправильная фамилия
+users.wrong.sex: Пол не найден
+users.wrong.login.or.password: Неправильные логин и/или пароль
 
 code404: Страница не найдена
 
 //-----------------------Other strings--------------\\
-login: Логин
-placeholderLogin: Ваш логин (Например: ivan121)
-password: Пароль
-placeholderPassword: Ваш пароль (Например: TzZUtoc0aH6I)
-firstName: Имя
-placeholderFirstName: Ваше имя (Например: Иван)
-secondName: Фамилия
-placeholderSecondName: Ваша фамилия (Например: Иванов)
-sendMessage: Отправить
-resetMessage: Сбросить
-sex: Пол
+errorText: Ошибка
+domenText: Сайт
+balanceText: Баланс
+loginText: Логин
+passwordText: Пароль
+firstNameText: Имя
+secondNameText: Фамилия
+sexText: Пол
 man: Мужчина
 woman: Женщина
-registerForm: Регистрация
-loginForm: Вход
-
-log_in: Войти
-join_in: Зарегистрироваться
-remember: Запомнить
-welcome: Здравстуйте
+placeholderLoginText: Ваш логин (Например: john121)
+placeholderPasswordText: Ваш пароль (Например: TzZUtoc0aH6I)
+placeholderFirstNameText: Ваше имя (Например: Иван)
+placeholderSecondNameText: Ваша фамилия (Например: Иванов)
+registerFormText: Регистрация
+loginFormText: Вход
+accountText: Мой профиль
+friendsText: Мои друзья
+logInText: Вход
+joinInText: Регистрация
+rememberText: Запомнить
+welcomeText: Добро пожаловать
+loadingText: Загрузка
+sendMessageText: Отправить
+resetMessageText: Сбросить
+bdateText: День рождения
+countryText: Страна
+cityText: Город
+balanceText: Баланс
+blackListText: Чёрный список
+addFriendText: Добавить в друзья
+addBlackText: Добавить в чёрный список
+requestSendAction: Запрос в друзья отправлен
+addedBlackAction: Пользователь добавлен в чёрный список

@@ -493,7 +493,7 @@ let live_lib_database = function (settings) {
                     resolve();
                   });
                 }));
-              } else errors[i] = new Error("LiveLib: Module: \"Databases\"::insert - Haven`t enouth arguments!");
+              } else errors[i] = new Error("LiveLib: Module: \"Databases\"::update - Haven`t enouth arguments!");
             }
           }
           Promise.all(promises).then(() => {

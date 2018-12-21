@@ -1,0 +1,23 @@
+// Friends list
+html
+    head
+        title #{domen}
+        style
+            include ../css/userFrom.css
+        script(src="/api/js?file=rsa.js")
+        script(src="/api/js?file=base.js")
+        script.
+          function showAccount() {
+            window.location.replace("..");
+          }
+          function showBlack() {
+            window.location.replace("black");
+          }
+    body
+        div.divide
+            div.left
+                input.menu(id="account" type="button" value=accountText onclick="showAccount()")
+                input.menu(id="friends" type="button" value=friendsText onclick="")
+                input.menu(id="black" type="button" value=blackListText onclick="showBlack()")
+            div.right
+                ul

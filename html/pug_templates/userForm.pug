@@ -1,41 +1,102 @@
 // User info form
 html
     head
+        title #{domen}
         style
             include ../css/userFrom.css
         script(src="/api/js?file=rsa.js")
         script(src="/api/js?file=base.js")
+        script.
+          function showFriends() {
+            window.location.replace("/" + Base.lang + "/friends");
+          }
+          function showBlack() {
+            window.location.replace("/" + Base.lang + "/black");
+          }
+
+          function addFriend() {
+            Base.sendRequestToServer("friends.add", {id: #{id}}, function (err, res) {
+              if (err) alert(err.error.message);
+              else {
+                document.getElementById("addFriend").hidden = true;
+                document.getElementById("deleteFriend").hidden = false;
+                alert("#{requestSendAction}");
+              }
+            });
+          }
+
+          function addBlack() {
+            Base.sendRequestToServer("blacklist.add", {id: #{id}}, function (err, res) {
+              if (err) alert(err.error.message);
+              else {
+                document.getElementById("addBlack").hidden = true;
+                document.getElementById("deleteBlack").hidden = false;
+                alert("#{addedBlackAction}");
+              }
+            });
+          }
+
+          function deleteBlack() {
+            Base.sendRequestToServer("blacklist.delete", {id: #{id}}, function (err, res) {
+              if (err) alert(err.error.message);
+              else {
+                document.getElementById("addBlack").hidden = false;
+                document.getElementById("deleteBlack").hidden = true;
+                alert("#{deletedBlackAction}");
+              }
+            });
+          }
+
+          function deleteFriend() {
+            Base.sendRequestToServer("friends.delete", {id: #{id}}, function (err, res) {
+              if (err) alert(err.error.message);
+              else {
+                document.getElementById("addFriend").hidden = false;
+                document.getElementById("deleteFriend").hidden = true;
+                alert("#{deletedFriendAction}");
+              }
+            });
+          }
     body
         div.divide
             div.left
-                input.menu(id="friends" type="button" value=friends onclick="showFriends()")
+                input.menu(id="account" type="button" value=accountText)
+                input.menu(id="friends" type="button" value=friendsText onclick="showFriends()")
+                input.menu(id="black" type="button" value=blackListText onclick="showBlack()")
+                input.menu(id="addFriend" type="button" value=addFriendText onclick="addFriend()" hidden = !canAddToFriend)
+                input.menu(id="deleteFriend" type="button" value=deleteFriendText onclick="deleteFriend()" hidden = !canDeleteFromFriend)
+                input.menu(id="addBlack" type="button" value=addBlackText onclick="addBlack()" hidden = !canAddToBlack)
+                input.menu(id="deleteBlack" type="button" value=deleteBlackText onclick="deleteBlack()" hidden = !canDeleteFromBlack)
             div.right
                 if (lastName)
                     p #{firstName} #{secondName} #{lastName}
                 else
                     p #{firstName} #{secondName}
                 if (status)
-                    h2 #{status}
+                    h2 #{statusText}: #{status}
                     br
                 p #{sexText}: #{sex}
                 br
+                if (balance > -1)
+                    p #{balanceText}: #{balance}
+                    br
                 if (bdate)
                     h3 #{bdateText}: #{bdate}
                     br
                 if (country)
-                    h3 #{country}
+                    h3 #{countryText}: #{country}
                     br
                 if (city)
-                    h3 #{city}
+                    h3 #{cityText}: #{city}
                     br
                 if (mobile_phone)
-                    h3 #{mobile_phone}
+                    h3 #{mobilePhoneText}: #{mobile_phone}
                     br
                 if (home_phone)
-                    h3 #{home_phone}
+                    h3 #{homePhoneText}: #{home_phone}
                     br
                 if (site)
-                    h3 #{site}
+                    h3 #{siteText}: #{site}
                     br
                 if (verified)
                     h3 #{verifiedText}

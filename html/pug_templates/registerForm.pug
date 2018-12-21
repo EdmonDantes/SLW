@@ -1,25 +1,35 @@
 // Register Form
 html
     head
+        title #{title}
         style
             include ../css/registerForm.css
         script(src="/api/js?file=rsa.js")
         script(src="/api/js?file=base.js")
-        script(src="/api/js?file=registerSend.js")
         script.
-          Base.reset(["login", "password", "fName", "sName", "man"], ["woman"]);
-          createSend({
-            login: "#{wrongLogin}",
-            password: "#{wrongPassword}",
-            firstName: "#{fName}",
-            secondName: "#{sName}"
+          Base.reset(["login", "password", "firstName", "secondName", "man"], ["woman"]);
+          Base.createSendFunction("/postjoin", {
+            login: {},
+            password: {
+              check: function (value, callback) {
+                Base.encrypt(value, callback);
+              }
+            },
+            firstName: {},
+            secondName: {},
+            man: {
+              key: "sex",
+              check: function (value, callback) {
+                callback(undefined, value ? "man" : "woman");
+              }
+            }
           });
     body
-        div(id="load" hidden)
+        div(id="loading" hidden)
             h1 #{loading}
-        div(id = "registration")
+        div(id="main")
             h1 #{registerForm}
-            h2(id = "error" style='color:red' hidden="false") #{error_message}
+            h2.error(id = "error" hidden)
             p
                 b #{login}
                 br
@@ -31,11 +41,11 @@ html
             p
                 b #{firstName}
                 br
-                input(id = "fName" name='firstName' type='text' placeholder=placeholderFirstName required)
+                input(id = "firstName" name='firstName' type='text' placeholder=placeholderFirstName required)
             p
                 b #{secondName}
                 br
-                input(id = "sName" name='secondName' type='text' placeholder=placeholderSecondName required)
+                input(id = "secondName" name='secondName' type='text' placeholder=placeholderSecondName required)
             p
                 b #{sexText}
                 br

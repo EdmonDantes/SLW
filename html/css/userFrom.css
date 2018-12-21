@@ -10,7 +10,7 @@ div.left {
     display: grid;
     width: auto;
     align-self: flex-start;
-    grid-template-rows: 30px;
+    grid-template-rows: 30px 30px 30px 30px 30px 30px;
 }
 
 div.right {
@@ -20,6 +20,6 @@ div.right {
 }
 
 input.menu {
-    width: 100px;
+    width: 200px;
     margin: auto;
 }

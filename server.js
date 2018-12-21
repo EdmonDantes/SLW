@@ -75,25 +75,22 @@ pages["join"] = (res, callback) => {
   } else
     callback(undefined, {
       "$$name": path.join(folder, "pug_templates", "registerForm"),
-      login: "login",
-      placeholderLogin: "placeholderLogin",
-      password: "password",
-      placeholderPassword: "placeholderPassword",
-      firstName: "firstName",
-      secondName: "secondName",
-      placeholderFirstName: "placeholderFirstName",
-      placeholderSecondName: "placeholderSecondName",
-      sendMessage: "sendMessage",
-      resetMessage: "resetMessage",
+      title: "registerFormText",
+      login: "loginText",
+      password: "passwordText",
+      firstName: "firstNameText",
+      secondName: "secondNameText",
+      placeholderLogin: "placeholderLoginText",
+      placeholderPassword: "placeholderPasswordText",
+      placeholderFirstName: "placeholderFirstNameText",
+      placeholderSecondName: "placeholderSecondNameText",
+      sendMessage: "sendMessageText",
+      resetMessage: "resetMessageText",
       man: "man",
       woman: "woman",
-      sex: "sex",
-      loading: "loading",
-      registerForm: "registerForm",
-      wrongLogin: "users.wrong.login",
-      wrongPassword: "users.wrong.password",
-      fName: "fName",
-      sName: "sName"
+      sexText: "sexText",
+      loading: "loadingText",
+      registerForm: "registerFormText"
     });
 };
 
@@ -104,14 +101,16 @@ pages["login"] = (res, callback) => {
   } else
     callback(undefined, {
       "$$name": path.join(folder, "pug_templates", "loginForm.pug"),
-      login: "login",
-      placeholderLogin: "placeholderLogin",
-      password: "password",
-      placeholderPassword: "placeholderPassword",
-      resetMessage: "resetMessage",
-      log_in: "log_in",
-      remember: "remember",
-      loginForm: "loginForm"
+      title: "loginFormText",
+      loginForm: "loginFormText",
+      loading: "loadingText",
+      login: "loginText",
+      password: "passwordText",
+      placeholderLogin: "placeholderLoginText",
+      placeholderPassword: "placeholderPasswordText",
+      resetMessage: "resetMessageText",
+      log_in: "logInText",
+      remember: "rememberText"
     });
 };
 
@@ -121,9 +120,21 @@ pages["reset"] = (res, callback) => {
   res.res.sendStatus(303);
 };
 
+pages["friends"] = (res, callback) => {
+  if (res.token) {
+    res.res.send("WIP")
+    // users.friendsGet(-1, res.token, (err, res) => {
+    //
+    // });
+  } else {
+    res.res.header("Location", "/");
+    res.res.sendStatus(303);
+  }
+};
+
 pages["user:id"] = (res) => {
   if (res.token) {
-    renderUserForm(res.res, res["__params"].id, res.token, res.lang);
+    renderUserForm(res.res, res["__params"].id ? res["__params"].id : -1, res.token, res.lang);
   } else {
     res.res.header("Location", "/");
     res.res.sendStatus(303);
@@ -156,15 +167,16 @@ function renderError(res, err, lang) {
   render(res, {
     "$$name": path.join(folder, "pug_templates", "errorForm.pug"),
     "$code": err.code,
-    message: err.message
+    message: err.message,
+    error: "errorText"
   }, lang);
 }
 
 function renderMainForm(res, lang) {
   res.render(path.join(folder, "pug_templates", "mainForm.pug"), {
-    log_in: locale.getSync("log_in", lang),
-    join_in: locale.getSync("join_in", lang),
-    welcome: locale.getSync("welcome", lang),
+    log_in: locale.getSync("logInText", lang),
+    join_in: locale.getSync("joinInText", lang),
+    welcome: locale.getSync("welcomeText", lang),
   });
 }
 
@@ -177,12 +189,68 @@ function renderUserForm(res, id, token, lang, callback) {
       res0.sexText = locale.getSync("sexText", lang);
       res0.bdateText = locale.getSync("bdateText", lang);
       res0.sex = locale.getSync(res0.sex, lang);
-      res0.account = locale.getSync("account", lang);
-      res0.friends = locale.getSync("friends", lang);
+      res0.accountText = locale.getSync("accountText", lang);
+      res0.friendsText = locale.getSync("friendsText", lang);
+      res0.blackText = locale.getSync("blackText", lang);
+      res0.domen = locale.getSync("domenText", lang);
+      res0.balanceText = locale.getSync("balanceText", lang);
+      res0.blackListText = locale.getSync("blackListText", lang);
+      res0.addFriendText = locale.getSync("addFriendText", lang);
+      res0.addBlackText = locale.getSync("addBlackText", lang);
+      res0.requestSendAction = locale.getSync("requestSendAction", lang);
+      res0.addedBlackAction = locale.getSync("addedBlackAction", lang);
+      res0.deleteFriendText = locale.getSync("deleteFriendText", lang);
+      res0.deleteBlackText = locale.getSync("deleteBlackText", lang);
+      res0.deletedBlackAction = locale.getSync("deletedBlackAction", lang);
+      res0.deletedFriendAction = locale.getSync("deletedFriendAction", lang);
       res.render(path.join(folder, "pug_templates", "userForm.pug"), res0);
     }
   });
 }
+
+let serversMethods = {};
+
+pages["postjoin"] = (res, callback) => {
+  if (res.token) {
+    res.res.send({response: {code: 303, direction: res.lang ? "/" + res.lang + "/" : "/"}});
+  } else {
+    try {
+      users.registerUser(res.res.req.body, (err0, res0) => {
+        if (err0) {
+          global.LiveLib.getLogger().debugm("Server.js", "server.post(\"/join\") => ", err0);
+          sendError(res.res, err0, res.lang);
+        } else {
+          res.res.cookie("token", res0);
+          res.res.send({response: {code: 303, direction: res.lang ? "/" + res.lang + "/" : "/"}});
+        }
+      });
+    } catch (err) {
+      global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err);
+      callback(error.serv(err));
+    }
+  }
+};
+
+pages["postlogin"] = (res, callback) => {
+  if (res.token) {
+    res.res.send({response: {code: 303, direction: res.lang ? "/" + res.lang + "/" : "/"}});
+  } else {
+    try {
+      users.loginUser(res.login, res.password, (err0, res0) => {
+        if (err0) {
+          global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err0);
+          sendError(res.res, err0, res.lang);
+        } else {
+          res.res.cookie("token", res0);
+          res.res.send({response: {code: 303, direction: res.lang ? "/" + res.lang + "/" : "/"}});
+        }
+      }, res.remember);
+    } catch (err) {
+      global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/login\") => ", err);
+      callback(error.serv(err));
+    }
+  }
+};
 
 function __func009(tmp, res) {
   if (tmp && tmp.length > 0) {
@@ -318,44 +386,8 @@ server.get("/*", (res) => {
   __func009(tmp, res);
 });
 
-server.post("/join", (res) => {
-  if (res.cookies.token) {
-    res.res.send({response: {code: 303, direction: "/"}});
-  } else {
-    try {
-      users.registerUser(res.body, (err0, res0) => {
-        if (err0) {
-          global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err0);
-          sendError(res.res, err0);
-        } else {
-          res.res.cookie("token", res0);
-          res.res.send({response: {code: 303, direction: "/"}});
-        }
-      });
-    } catch (err) {
-      global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err);
-      sendError(res.res, {code: 1, message: "server.error"});
-    }
-  }
-});
-
-server.post("/login", (res) => {
-  if (res.cookies.token) {
-    res.res.send({response: {code: 303, direction: "/"}});
-  } else {
-    try {
-      users.loginUser(res.body.login, res.body.password, (err0, res0) => {
-        if (err0) {
-          global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/join\") => ", err0);
-          sendError(res.res, err0);
-        } else {
-          res.res.cookie("token", res0);
-          res.res.send({response: {code: 303, direction: "/"}});
-        }
-      }, res.body.remember);
-    } catch (err) {
-      global.LiveLib.getLogger().errorm("Server.js", "server.post(\"/login\") => ", err);
-      sendError(res.res, {code: 1, message: "server.error"});
-    }
-  }
+server.post("/*", (res) => {
+  if (!res.params[0]) res.params[0] = "";
+  let tmp = res.params[0].split("/");
+  __func009(tmp, res);
 });

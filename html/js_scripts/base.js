@@ -1,15 +1,30 @@
 Base = {
-  domen: "http://localhost:8080",
-  publicKey: undefined,
+  domen: window.location.origin,
+  lang: navigator.language || navigator.userLanguage,
+
+  url: function (str, ...args) {
+    let tmp0 = str.split("://");
+    if (tmp0.length > 1) {
+      this.protocol = tmp0[0].toLowerCase();
+      this.url = tmp0[1].split("/").filter(str => str.length > 0 && str !== ".." && str != ".");
+    } else {
+      this.protocol = undefined;
+      this.url = tmp0[0].split("/").filter(str => str.length > 0 && str !== ".." && str != ".");
+    }
+
+    this.join(...args);
+  },
 
   sendRequest: function (url, object, headers, callback, lang, post_object) {
-    let postDomen = "/" + (lang ? lang + "/" : "");
+    let obj = "";
     if (object) {
+      obj += "?"
       for (let [key, value] of Object.entries(object)) {
-        postDomen += "&" + key + "=" + value;
+        obj += key + "=" + value + "&";
       }
     }
-    let tmp = new URL(url, new URL(postDomen.substr(0, postDomen.length - 1), this.domen));
+    let tmp = new Base.url(this.domen, lang ? lang : this.lang, url + (obj ? obj.substr(0, obj.length - 1) : "")).toString();
+    console.log(tmp);
 
     let xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function () {
@@ -33,7 +48,7 @@ Base = {
           } catch (err) {
             callback({error: err});
           }
-        }
+        } else callback({error: {code: xmlHttp.status, message: xmlHttp.responseText}});
       }
     };
     xmlHttp.open(post_object ? "POST" : "GET", tmp, true);
@@ -46,18 +61,12 @@ Base = {
   },
 
   sendRequestToServer: function (method, object, callback, lang, post, post_object) {
-    this.sendRequest("api/" + method + "?crossDomenRequest=true", object, undefined, callback, lang, post_object);
+    object.crossDomenRequest = true;
+    this.sendRequest("api/" + method, object, undefined, callback, lang, post_object);
   },
 
   getPublicKey: function (callback) {
-    if (this.publicKey) callback(undefined, this.publicKey);
-    else this.sendRequestToServer("server.getPublicKey", null, (err, res) => {
-      if (err) callback(err);
-      else {
-        this.publicKey = res;
-        callback(undefined, res);
-      }
-    });
+    this.sendRequestToServer("server.getPublicKey", null, callback);
   },
 
   encrypt: function (text, callback) {
@@ -106,12 +115,11 @@ Base = {
 
   createSendFunction: function (url, obj) {
     return window.send = function () {
-      let lang = navigator.language || navigator.userLanguage;
       let errorObject = document.getElementById("error");
       let sendObject = {};
       let promises = [];
       for (let [key, value] of Object.entries(obj)) {
-        let key0 = key || value.key;
+        let key0 = value.key || key;
         sendObject[key0] = Base.getState(key);
         if (value.check) {
           promises.push(new Promise((res, rej) => {
@@ -129,7 +137,6 @@ Base = {
         errorObject.hidden = true;
         document.getElementById("loading").hidden = false;
         document.getElementById("main").hidden = true;
-        debugger;
         Base.sendRequest(url, undefined, {"Content-Type": "application/json"}, (err0, res0) => {
           document.getElementById("loading").hidden = true;
           document.getElementById("main").hidden = false;
@@ -137,7 +144,7 @@ Base = {
             errorObject.innerText = err0.error.message;
             errorObject.hidden = false;
           }
-        }, lang, JSON.stringify(sendObject));
+        }, Base.lang, JSON.stringify(sendObject));
       }, (err) => {
         if (err) {
           errorObject.innerText = err.message;
@@ -147,3 +154,30 @@ Base = {
     };
   }
 };
+
+Base.url.prototype.getDomain = function () {
+  return this.url.length > 0 ? this.url[0] : "";
+};
+
+Base.url.prototype.getPath = function () {
+  return this.url.length > 1 ? this.url.slice(1).join("/") : "";
+};
+
+Base.url.prototype.join = function (...args) {
+  for (let str of args) {
+    let tmp = new Base.url(str);
+    if (this.protocol === -1) {
+      this.protocol = tmp.protocol;
+      this.url = tmp.url.concat(this.url);
+    } else this.url = this.url.concat(tmp.url);
+  }
+  return this;
+};
+
+Base.url.prototype.toString = function () {
+  return (this.protocol ? this.protocol + "://" : "") + this.url.join("/");
+};
+
+let url = new Base.url(window.location.toString());
+if (!url.url[1] || url.url[1].indexOf("-") < 0) window.location.replace("/" + Base.lang + "/" + url.getPath());
+else Base.lang = url.url[1];

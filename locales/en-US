@@ -24,37 +24,53 @@ users.have.not.permissions: You dont have permissions for this action
 photo.wrong.type: It is wrong type of photo
 photo.wrong.target: This target does not exist
 photo.not.find.target: This target is not find
-
-
-
+users.wrong.first.name: Wrong first name
+users.wrong.second.name: Wrong second name
+users.wrong.sex: Sex isn`t find
+users.wrong.login.or.password: Wrong login or password
 
 code404: Page not found // Error code: 404
 
-fName: Wrong first name
-sName: Wrong second name
-
 
 //-----------------------Other strings--------------\\
-login: Login
-placeholderLogin: Your login (Example: john121)
-password: Password
-placeholderPassword: Your Password (Example: TzZUtoc0aH6I)
-firstName: First Name
-placeholderFirstName: Your first name (Example: John)
-secondName: Second Name
-placeholderSecondName: Your second name (Example: Smith)
-sendMessage: Send
-resetMessage: Reset
+
+
+//-----------------------Texts----------------------\\
+errorText: Error
+domenText: Site
+balanceText: Balance
+loginText: Login
+passwordText: Password
+firstNameText: First Name
+secondNameText: Second Name
 sexText: Sex
 man: Man
 woman: Woman
-registerForm: Register Form
-loginForm: Login Form
-account: My account
-friends: Friends
-
-log_in: Log in
-join_in: Join in
-remember: Remember
-welcome: Welcome
-loading: Loading
+registerFormText: Register Form
+loginFormText: Login Form
+accountText: My account
+friendsText: My Friends
+logInText: Log in
+joinInText: Join in
+rememberText: Remember
+welcomeText: Welcome
+loadingText: Loading
+sendMessageText: Send
+resetMessageText: Reset
+bdateText: Birthday
+countryText: Country
+cityText: City
+balanceText: Balance
+blackListText: BlackList
+placeholderLoginText: Your login (Example: john121)
+placeholderPasswordText: Your Password (Example: TzZUtoc0aH6I)
+placeholderFirstNameText: Your first name (Example: John)
+placeholderSecondNameText: Your second name (Example: Smith)
+addFriendText: Add to friends
+addBlackText: Add to blacklist
+deleteFriendText: Delete from friend
+deleteBlackText: Delete from blacklist
+requestSendAction: Send friend request
+addedBlackAction: User was added in black list
+deletedBlackAction: Deleted from blacklist
+deletedFriendAction: Deleted from friends
