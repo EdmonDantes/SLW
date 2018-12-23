@@ -17,7 +17,7 @@ let live_lib_userEngine = function (settings) {
     const TOKEN_LENGTH = 240;
 
 
-    global.LiveLib.userEngine = function (server_ip, host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", port, count_pools = 20, callback) {
+    global.LiveLib.userEngine = function (server_ip, host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", folder = "./html", port, count_pools = 20, callback) {
       let that = this;
       this.photoFolder = path.resolve(photo_folder);
       base.createIfNotExists(this.photoFolder);
@@ -27,6 +27,7 @@ let live_lib_userEngine = function (settings) {
         if (this.status > 1) callback();
         else this.status++;
       };
+      this.folder = path.resolve(folder);
 
       db.createTable("servers",
         {name: "id", type: UTYNYINT(), notnull: true, autoincrement: true, primary: true},
@@ -824,15 +825,16 @@ let live_lib_userEngine = function (settings) {
     };
 
     function __func004(user_id, that, callback) {
-      that.db.select("relations", {where: "status = 6 AND (user_id_1 = " + user.id + " OR user_id_2 = " + user.id + ")"}, (err, res) => {
+      that.db.select("relations", {where: "status = 0 AND (user_id_1 = " + user_id + " OR user_id_2 = " + user_id + ")"}, (err, res) => {
         if (err) {
           callback(error.serv(err));
         } else {
           let ids = new Array(res.length);
           for (let i = 0; i < res.length; i++) {
             if (res[i].user_id_1 == user_id) ids[i] = res[i].user_id_2;
-            else ids[i] = res[i].user_id_2;
+            else ids[i] = res[i].user_id_1;
           }
+          callback(undefined, ids);
         }
       });
     }
@@ -897,7 +899,7 @@ let live_lib_userEngine = function (settings) {
               if (res[i].user_id_1 == user.id) ids[i] = res[i].user_id_2;
               else ids[i] = res[i].user_id_1;
             }
-            return ids;
+            callback(undefined, ids);
           }
         });
       });
@@ -915,7 +917,7 @@ let live_lib_userEngine = function (settings) {
               if (res[i].user_id_1 == user.id) ids[i] = res[i].user_id_2;
               else ids[i] = res[i].user_id_1;
             }
-            return ids;
+            callback(undefined, ids);
           }
         });
       });
@@ -1139,7 +1141,6 @@ let live_lib_userEngine = function (settings) {
           callback(new error(17, "photo.not.find"));
         }
       });
-
     }
 
     users.prototype.getPhoto = function (photo_name, key) {
@@ -1166,7 +1167,7 @@ let live_lib_userEngine = function (settings) {
             callback(new error(24, "photo.wrong.type"));
           } else {
             if (photo_id == -1) {
-              callback(undefined, fs.createReadStream(path.join(that.folder, images, "not_photo_" + type)));
+              callback(undefined, fs.createReadStream(path.join(that.folder, "images", "0.jpeg"))); // "not_photo_" + type
             } else
               __func005(photo_id, user.id, that, (err, res) => {
                 if (err) callback(err);
@@ -1248,6 +1249,7 @@ let live_lib_userEngine = function (settings) {
         user_id = (user_id < 0 ? user.id : user_id);
         switch (target) {
           case 1:
+          case "1":
             that.db.select("avatars", {where: "user_id = " + user_id}, (err, res) => {
               if (err) {
                 callback(error.serv(err));

@@ -70,6 +70,15 @@ addFriendText: Add to friends
 addBlackText: Add to blacklist
 deleteFriendText: Delete from friend
 deleteBlackText: Delete from blacklist
+inputRequestText: Getting friends request
+outputRequestText: Sending friends request
+deleteFriendText: Delete from friends
+haveNotFriends: You haven`t friends
+haveNotIn: You haven`t getting friend`s request
+haveNotOut: You haven`t sending friend`s request
+cancel: Cancel
+
+
 requestSendAction: Send friend request
 addedBlackAction: User was added in black list
 deletedBlackAction: Deleted from blacklist

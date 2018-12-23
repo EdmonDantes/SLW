@@ -3,4 +3,4 @@ user: root
 password: 1111qazwsxqweasd
 database: testApi
 photos folder: /tmp/photo
-domen: http://localhost:8080
+domain: http://localhost:8080

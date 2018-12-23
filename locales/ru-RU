@@ -64,5 +64,16 @@ balanceText: Баланс
 blackListText: Чёрный список
 addFriendText: Добавить в друзья
 addBlackText: Добавить в чёрный список
+inputRequestText: Входящие заявки
+outputRequestText: Исходящие заявки
+deleteFriendText: Удалить из друзей
+haveNotFriends: Список друзей пуст
+haveNotIn: У вас нету входящих заявок
+haveNotOut: У вас нету исходящих заявок
+cancel: Отменить
+
+
 requestSendAction: Запрос в друзья отправлен
 addedBlackAction: Пользователь добавлен в чёрный список
+deletedBlackAction: Удалён из чёрного списка
+deletedFriendAction: Удалён из друзей

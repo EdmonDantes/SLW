@@ -1,12 +1,18 @@
 // User info form
 html
     head
-        title #{domen}
+        title #{title}
         style
             include ../css/userFrom.css
         script(src="/api/js?file=rsa.js")
         script(src="/api/js?file=base.js")
         script.
+          var id = #{id};
+
+          function showAccount() {
+            window.location.replace("/" + Base.lang + "/");
+          }
+
           function showFriends() {
             window.location.replace("/" + Base.lang + "/friends");
           }
@@ -60,7 +66,7 @@ html
     body
         div.divide
             div.left
-                input.menu(id="account" type="button" value=accountText)
+                input.menu(id="account" type="button" value=accountText onclick="showAccount()")
                 input.menu(id="friends" type="button" value=friendsText onclick="showFriends()")
                 input.menu(id="black" type="button" value=blackListText onclick="showBlack()")
                 input.menu(id="addFriend" type="button" value=addFriendText onclick="addFriend()" hidden = !canAddToFriend)

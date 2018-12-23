@@ -12,10 +12,10 @@ pref.loadDataSync();
 
 let port = pref.get("serverPort", "8080");
 let ip = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
-let domen = pref.get("domen", ip);
+let domen = pref.get("domain", ip);
 let folder = path.resolve("./html");
 
-let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"), undefined, undefined, () => {
+let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photos folder"), folder, undefined, undefined, () => {
   server.start();
 });
 
@@ -54,7 +54,7 @@ methods["photos.get"] = (res, callback) => users.photosGet(res.id, res.type, res
   });
 });
 methods["photos.setTarget"] = (res, callback) => users.photosSetTarget(res.id, res.target, res.token, callback);
-methods["photos.getTarget"] = (res, callback) => users.photosGetTarget(res.target, res.token, callback);
+methods["photos.getTarget"] = (res, callback) => users.photosGetTarget(res.id, res.target, res.token, callback);
 
 methods["docs"] = res => res.res.sendFile(path.join(folder, "html_static", "README_API.html"));
 methods["demo"] = res => res.res.sendFile(path.join(folder, "html_static", "test.html"));
@@ -122,7 +122,38 @@ pages["reset"] = (res, callback) => {
 
 pages["friends"] = (res, callback) => {
   if (res.token) {
-    res.res.send("WIP")
+    users.friendsGet(-1, res.token, (err0, res0) => {
+      if (err0) callback(err0);
+      else {
+        users.friendsGetGetRequest(res.token, (err1, res1) => {
+          if (err1) callback(err1);
+          else {
+            users.friendsGetSendRequest(res.token, (err2, res2) => {
+              if (err2) callback(err2);
+              else callback(undefined, {
+                "$$name": path.join(folder, "pug_templates", "friendsForm.pug"),
+                "title": "domenText",
+                "$friends": res0.toString(),
+                "$outRequest": res2.toString(),
+                "$inRequest": res1.toString(),
+                addFriendText: "addFriendText",
+                accountText: "accountText",
+                friendsText: "friendsText",
+                blackListText: "blackListText",
+                inputRequestText: "inputRequestText",
+                outputRequestText: "outputRequestText",
+                deleteFriendText: "deleteFriendText",
+                haveNotFriends: "haveNotFriends",
+                haveNotIn: "haveNotIn",
+                haveNotOut: "haveNotOut",
+                cancel: "cancel",
+              })
+            });
+          }
+        });
+      }
+    });
+    //res.res.send("WIP")
     // users.friendsGet(-1, res.token, (err, res) => {
     //
     // });
@@ -192,7 +223,7 @@ function renderUserForm(res, id, token, lang, callback) {
       res0.accountText = locale.getSync("accountText", lang);
       res0.friendsText = locale.getSync("friendsText", lang);
       res0.blackText = locale.getSync("blackText", lang);
-      res0.domen = locale.getSync("domenText", lang);
+      res0.title = locale.getSync("domenText", lang);
       res0.balanceText = locale.getSync("balanceText", lang);
       res0.blackListText = locale.getSync("blackListText", lang);
       res0.addFriendText = locale.getSync("addFriendText", lang);

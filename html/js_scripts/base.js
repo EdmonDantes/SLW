@@ -1,5 +1,5 @@
 Base = {
-  domen: window.location.origin,
+  domain: window.location.origin,
   lang: navigator.language || navigator.userLanguage,
 
   url: function (str, ...args) {
@@ -23,7 +23,7 @@ Base = {
         obj += key + "=" + value + "&";
       }
     }
-    let tmp = new Base.url(this.domen, lang ? lang : this.lang, url + (obj ? obj.substr(0, obj.length - 1) : "")).toString();
+    let tmp = new Base.url(this.domain, lang ? lang : this.lang, url + (obj ? obj.substr(0, obj.length - 1) : "")).toString();
     console.log(tmp);
 
     let xmlHttp = new XMLHttpRequest();
@@ -46,7 +46,7 @@ Base = {
 
             }
           } catch (err) {
-            callback({error: err});
+            callback(undefined, xmlHttp.responseText);
           }
         } else callback({error: {code: xmlHttp.status, message: xmlHttp.responseText}});
       }

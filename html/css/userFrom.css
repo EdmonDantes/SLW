@@ -19,6 +19,31 @@ div.right {
     margin-left: 10px;
 }
 
+div.grid {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    width: auto;
+    padding-bottom: 20px;
+}
+
+div.part {
+    display: grid;
+    width: 500px;
+    min-height: 40px;
+    max-height: 75px;
+    grid-template-columns: auto auto auto;
+    border: 3px solid #8bcb67;
+    border-radius: 3px;
+}
+
+img.s {
+    min-width: 40px;
+    max-width: 75px;
+    min-height: 40px;
+    max-height: 75px;
+}
+
 input.menu {
     width: 200px;
     margin: auto;
