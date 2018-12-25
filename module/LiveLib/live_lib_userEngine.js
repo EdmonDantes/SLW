@@ -586,7 +586,7 @@ let live_lib_userEngine = function (settings) {
 
                     if (res !== "in_black" && res !== "all_black") res0.canAddToBlack = true;
                     else res0.canDeleteFromBlack = true;
-                    if (res !== "friend" && res !== "sendRequest") res0.canAddToFriend = !res0.closed && res !== "black";
+                    if (res !== "friend" && res !== "sendRequest") res0.canAddToFriend = res !== "black";
                     else res0.canDeleteFromFriend = true;
 
                     callback(undefined, res0);
