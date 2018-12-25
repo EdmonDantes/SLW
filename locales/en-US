@@ -68,14 +68,14 @@ placeholderFirstNameText: Your first name (Example: John)
 placeholderSecondNameText: Your second name (Example: Smith)
 addFriendText: Add to friends
 addBlackText: Add to blacklist
-deleteFriendText: Delete from friend
+deleteFriendText: Delete from friends
 deleteBlackText: Delete from blacklist
 inputRequestText: Getting friends request
 outputRequestText: Sending friends request
-deleteFriendText: Delete from friends
 haveNotFriends: You haven`t friends
 haveNotIn: You haven`t getting friend`s request
 haveNotOut: You haven`t sending friend`s request
+haveNotBlack: Your black list is empty
 cancel: Cancel
 
 

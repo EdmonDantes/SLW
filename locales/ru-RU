@@ -64,12 +64,14 @@ balanceText: Баланс
 blackListText: Чёрный список
 addFriendText: Добавить в друзья
 addBlackText: Добавить в чёрный список
+deleteFriendText: Удалить из друзей
+deleteBlackText: Удалить из чёрного списка
 inputRequestText: Входящие заявки
 outputRequestText: Исходящие заявки
-deleteFriendText: Удалить из друзей
 haveNotFriends: Список друзей пуст
 haveNotIn: У вас нету входящих заявок
 haveNotOut: У вас нету исходящих заявок
+haveNotBlack: Чёрный список пуст
 cancel: Отменить
 
 

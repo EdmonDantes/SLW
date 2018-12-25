@@ -16,6 +16,7 @@ html
           function showFriends() {
             window.location.replace("/" + Base.lang + "/friends");
           }
+
           function showBlack() {
             window.location.replace("/" + Base.lang + "/black");
           }
@@ -63,6 +64,20 @@ html
               }
             });
           }
+          Base.sendRequestToServer("photos.getTarget", {id: id, target: 1}, function (err, res) {
+            if (err) console.log(err);
+            else {
+              let img = document.createElement("img");
+              img.setAttribute("id", "image#{id}");
+              img.setAttribute("class", "p");
+              img.src = new Base.url(Base.domain, "api/photos.get?id=" + res.response + "&type=p");
+              img.onerror = function () {
+                img.hidden = true;
+              }
+              document.getElementById("imageDiv").appendChild(img);
+            }
+          });
+
     body
         div.divide
             div.left
@@ -74,6 +89,7 @@ html
                 input.menu(id="addBlack" type="button" value=addBlackText onclick="addBlack()" hidden = !canAddToBlack)
                 input.menu(id="deleteBlack" type="button" value=deleteBlackText onclick="deleteBlack()" hidden = !canDeleteFromBlack)
             div.right
+                div(id="imageDiv")
                 if (lastName)
                     p #{firstName} #{secondName} #{lastName}
                 else
@@ -81,8 +97,9 @@ html
                 if (status)
                     h2 #{statusText}: #{status}
                     br
-                p #{sexText}: #{sex}
-                br
+                if (sex)
+                    p #{sexText}: #{sex}
+                    br
                 if (balance > -1)
                     p #{balanceText}: #{balance}
                     br

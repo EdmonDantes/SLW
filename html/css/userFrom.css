@@ -10,7 +10,7 @@ div.left {
     display: grid;
     width: auto;
     align-self: flex-start;
-    grid-template-rows: 30px 30px 30px 30px 30px 30px;
+    grid-template-rows: 40px 40px 40px 40px 40px 40px;
 }
 
 div.right {
@@ -42,6 +42,13 @@ img.s {
     max-width: 75px;
     min-height: 40px;
     max-height: 75px;
+}
+
+img.p {
+    min-width: 150px;
+    max-width: 200px;
+    min-height: 150px;
+    max-height: 300px;
 }
 
 input.menu {

@@ -153,10 +153,28 @@ pages["friends"] = (res, callback) => {
         });
       }
     });
-    //res.res.send("WIP")
-    // users.friendsGet(-1, res.token, (err, res) => {
-    //
-    // });
+  } else {
+    res.res.header("Location", "/");
+    res.res.sendStatus(303);
+  }
+};
+
+pages["black"] = (res, callback) => {
+  if (res.token) {
+    users.blacklistGet(res.token, (err0, res0) => {
+      if (err0) callback(err0);
+      else callback(undefined, {
+        "$$name": path.join(folder, "pug_templates", "blackForm.pug"),
+        "$black": res0.toString(),
+        title: "domenText",
+        deleteBlackText: "deleteBlackText",
+        haveNotBlack: "haveNotBlack",
+        deletedBlackAction: "deletedBlackAction",
+        accountText: "accountText",
+        friendsText: "friendsText",
+        blackListText: "blackListText",
+      });
+    });
   } else {
     res.res.header("Location", "/");
     res.res.sendStatus(303);

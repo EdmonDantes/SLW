@@ -568,26 +568,29 @@ let live_lib_userEngine = function (settings) {
             }
           } else {
             switch (res) {
-              case "black":
-                callback(new error(11, "users.in.black"));
-                end(false);
-                break;
               default:
                 __func003(user_id, that, (err0, res0) => {
                   if (err0) {
                     callback(err0);
                     end(false);
                   } else {
-                    res0.balance = undefined;
-                    if (res0.closed[0] && res !== "friend") callback(new error(12, "users.closed"));
-                    else {
-                      if (res !== "in_black" && res !== "all_black") res0.canAddToBlack = true;
-                      if (res === "in_black" || res === "all_black") res0.canDeleteFromBlack = true;
-                      if (res !== "friend" && res !== "sendRequest") res0.canAddToFriend = true;
-                      else res0.canDeleteFromFriend = true;
-                      callback(undefined, res0);
-                    }
-                    end(!res0.closed[0] || (res0.closed[0] && res === "friend"));
+                    if ((res0.closed && res !== "friend") || res === "black") {
+                      res0 = {
+                        id: res0.id,
+                        firstName: res0.firstName,
+                        lastName: res0.lastName,
+                        secondName: res0.secondName,
+                        closed: res0.closed
+                      };
+                    } else res0.balance = undefined;
+
+                    if (res !== "in_black" && res !== "all_black") res0.canAddToBlack = true;
+                    else res0.canDeleteFromBlack = true;
+                    if (res !== "friend" && res !== "sendRequest") res0.canAddToFriend = !res0.closed && res !== "black";
+                    else res0.canDeleteFromFriend = true;
+
+                    callback(undefined, res0);
+                    end(true);
                   }
                 });
                 break;
@@ -726,7 +729,7 @@ let live_lib_userEngine = function (settings) {
               if (res[i].user_id_1 == user.id) ids[i] = res[i].user_id_2;
               else ids[i] = res[i].user_id_1;
             }
-            return ids;
+            callback(undefined, ids);
           }
         });
       });
@@ -753,7 +756,7 @@ let live_lib_userEngine = function (settings) {
                     else callback(undefined);
                     func(!err);
                   });
-                } else if (res === 3) {
+                } else if (res === 3 || res === (user.id < user_id ? 4 : 5)) {
                   that.db.update("relations", {
                     status: user_id < user.id ? 2 : 1,
                     "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
@@ -764,8 +767,6 @@ let live_lib_userEngine = function (settings) {
                   });
                 } else if (res === (user_id < user.id ? 4 : 5) || res === 6) {
                   callback(new error(11, "users.in.black"));
-                } else if (res === (user_id < user_id ? 4 : 5)) {
-                  callback(new error(14, "users.in.your.black"));
                 }
               } else {
                 that.db.insert("relations", {
@@ -857,7 +858,7 @@ let live_lib_userEngine = function (settings) {
             }
           } else {
             if (res === "all_black" || res === "black") {
-              callback(11, "users.in.black");
+              callback(new error(11, "users.in.black"));
               end(false);
             } else if (res === "friend") {
               __func004(user_id, that, (err0, res0) => {
@@ -872,7 +873,7 @@ let live_lib_userEngine = function (settings) {
                   end(false);
                 } else {
                   if (res.closed) {
-                    callback(12, "users.closed");
+                    callback(new error(12, "users.closed"));
                     end(false);
                   } else __func004(user_id, that, (err0, res0) => {
                     if (err0) callback(err0);
