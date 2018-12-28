@@ -17,8 +17,6 @@ let live_lib = async function (...args) {
         return require("./LiveLib/live_lib_logging")(...args);
       case "arguments":
         return require("./LiveLib/live_lib_arguments")(...args);
-      case "photoEngine":
-        return require("./LiveLib/live_lib_photoEngine")(...args);
       case "locale":
         return require("./LiveLib/live_lib_locale")(...args);
       case "engine":

@@ -39,6 +39,7 @@ loginText: Логин
 passwordText: Пароль
 firstNameText: Имя
 secondNameText: Фамилия
+middleNameText: Отчество
 sexText: Пол
 man: Мужчина
 woman: Женщина
@@ -62,6 +63,7 @@ countryText: Страна
 cityText: Город
 balanceText: Баланс
 blackListText: Чёрный список
+statusText: Статус
 addFriendText: Добавить в друзья
 addBlackText: Добавить в чёрный список
 deleteFriendText: Удалить из друзей
@@ -73,6 +75,11 @@ haveNotIn: У вас нету входящих заявок
 haveNotOut: У вас нету исходящих заявок
 haveNotBlack: Чёрный список пуст
 cancel: Отменить
+editForm: Настройки
+placeholderStatus: О чём вы думаете?
+placeholderMiddleName: Ваше отчество
+closedText: Закрытый аккаунт
+cancelMessage: Вы уверены, что хотите отметить изменения?
 
 
 requestSendAction: Запрос в друзья отправлен

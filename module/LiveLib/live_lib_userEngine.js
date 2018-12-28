@@ -7,7 +7,6 @@ let live_lib_userEngine = function (settings) {
     global.LiveLib.loadLiveModule("logging");
     let error = global.LiveLib.loadLiveModule("engine");
     let Database = global.LiveLib.loadLiveModule("database");
-    let PhotoEngine = global.LiveLib.loadLiveModule("photoEngine");
     let bcrypt = base.getLib("bcrypt");
     let gm = base.getLib("gm");
     let fs = base.getLib("fs");
@@ -610,32 +609,40 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
+    function __func010(string, length = 1) {
+      return string && string.length > length;
+    }
+
     users.prototype.accountEdit = function (input, token, callback) {
       this.createAction(token, "account.edit", "account", callback, (user, end, that) => {
-        input.id = undefined;
-        that.db.update("users",
-          {
-            login: input.login,
-            firstName: input.firstName,
-            secondName: input.secondName,
-            lastName: input.lastName,
-            sex: input.sex === "man" ? 1 : 0,
-            screen_name: input.screen_name,
-            bdate: input.bdate,
-            closed: input.closed ? 1 : 0,
-            country: input.country,
-            city: input.city,
-            mobile_phone: input.mobile_phone,
-            home_phone: input.home_phone,
-            site: input.site,
-            status: input.status,
-            "$$where": "id = " + user.id
-          },
-          err => {
-            if (err) callback(error.serv(err));
-            else callback(undefined);
-            end(!err);
-          });
+        if (!__func010(input.firstName, 2)) callback(new error(27, "users.wrong.first.name"));
+        else if (!__func010(input.secondName, 3)) callback(new error(28, "users.wrong.second.name"));
+        else if (input.sex && input.sex !== "man" && input.sex !== 'woman') callback(new error(29, "users.wrong.sex"));
+        else {
+
+          that.db.update("users",
+            {
+              firstName: input.firstName,
+              secondName: input.secondName,
+              lastName: input.lastName,
+              sex: input.sex === "man" ? 1 : 0,
+              screen_name: input.screen_name,
+              bdate: input.bdate,
+              closed: input.closed ? 1 : 0,
+              country: input.country,
+              city: input.city,
+              mobile_phone: input.mobile_phone,
+              home_phone: input.home_phone,
+              site: input.site,
+              status: input.status,
+              "$$where": "id = " + user.id
+            },
+            err => {
+              if (err) callback(error.serv(err));
+              else callback(undefined);
+              end(!err);
+            });
+        }
       });
     };
 

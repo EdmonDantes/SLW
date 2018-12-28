@@ -27,7 +27,7 @@ methods["server.getPublicKey"] = (res, callback) => callback(undefined, users.ge
 methods["account.login"] = (res, callback) => users.loginUser(res.login, res.password, callback, res.remember);
 methods["account.get"] = (res, callback) => users.accountGet(res.id, res.token, callback);
 methods["account.statusWith"] = (res, callback) => users.accountStatusWith(res.id, res.token, callback);
-methods["account.edit"] = (res, callback) => users.accountEdit(res.input, res.token, callback);
+methods["account.edit"] = (res, callback) => users.accountEdit(res, res.token, callback);
 
 methods["blacklist.add"] = (res, callback) => users.blacklistAdd(res.id, res.token, callback);
 methods["blacklist.delete"] = (res, callback) => users.blacklistDelete(res.id, res.token, callback);
@@ -181,6 +181,47 @@ pages["black"] = (res, callback) => {
   }
 };
 
+pages["edit"] = (res, callback) => {
+  if (res.token) {
+    users.accountGet(-1, res.token, (err0, res0) => {
+      if (err0) callback(err0);
+      else {
+        callback(undefined, {
+          "$$name": path.join(folder, "pug_templates", "settingsForm.pug"),
+          title: "domenText",
+          firstNameText: "firstNameText",
+          secondNameText: "secondNameText",
+          middleNameText: "middleNameText",
+          placeholderFirstName: "placeholderFirstNameText",
+          placeholderSecondName: "placeholderSecondNameText",
+          placeholderMiddleName: "placeholderMiddleName",
+          closedText: "closedText",
+          placeholderStatus: "placeholderStatus",
+          sendMessage: "sendMessageText",
+          resetMessage: "resetMessageText",
+          man: "man",
+          woman: "woman",
+          sexText: "sexText",
+          loading: "loadingText",
+          editForm: "editForm",
+          statusText: "statusText",
+          cancelMessage: "cancelMessage",
+          cancel: "cancel",
+          "$sex": !!res0.sex,
+          "$status": res0.status,
+          "$firstName": res0.firstName,
+          "$secondName": res0.secondName,
+          "$lastName": res0.lastName,
+          "$closed": !!res0.closed
+        });
+      }
+    });
+  } else {
+    res.res.header("Location", "/");
+    res.res.sendStatus(303);
+  }
+};
+
 pages["user:id"] = (res) => {
   if (res.token) {
     renderUserForm(res.res, res["__params"].id ? res["__params"].id : -1, res.token, res.lang);
@@ -197,7 +238,6 @@ pages[""] = (res, callback) => {
     renderMainForm(res.res, res.lang);
   }
 };
-
 
 function render(res, tmp, lang) {
   let name = tmp["$$name"];
@@ -241,6 +281,7 @@ function renderUserForm(res, id, token, lang, callback) {
       res0.accountText = locale.getSync("accountText", lang);
       res0.friendsText = locale.getSync("friendsText", lang);
       res0.blackText = locale.getSync("blackText", lang);
+      res0.statusText = locale.getSync("statusText", lang);
       res0.title = locale.getSync("domenText", lang);
       res0.balanceText = locale.getSync("balanceText", lang);
       res0.blackListText = locale.getSync("blackListText", lang);
@@ -252,6 +293,7 @@ function renderUserForm(res, id, token, lang, callback) {
       res0.deleteBlackText = locale.getSync("deleteBlackText", lang);
       res0.deletedBlackAction = locale.getSync("deletedBlackAction", lang);
       res0.deletedFriendAction = locale.getSync("deletedFriendAction", lang);
+      res0.editForm = locale.getSync("editForm", lang);
       res.render(path.join(folder, "pug_templates", "userForm.pug"), res0);
     }
   });
@@ -439,4 +481,12 @@ server.post("/*", (res) => {
   if (!res.params[0]) res.params[0] = "";
   let tmp = res.params[0].split("/");
   __func009(tmp, res);
+});
+
+process.stdin.on("data", (chunk) => {
+  if (chunk.toLowerCase() === "locale reload\n") {
+    locale.locales.clear();
+    locale.loadLocaleFromFileSync("en-US", true);
+    global.LiveLib.getLogger().info("Locales reloaded");
+  }
 });

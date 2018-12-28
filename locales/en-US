@@ -62,6 +62,7 @@ countryText: Country
 cityText: City
 balanceText: Balance
 blackListText: BlackList
+statusText: Status
 placeholderLoginText: Your login (Example: john121)
 placeholderPasswordText: Your Password (Example: TzZUtoc0aH6I)
 placeholderFirstNameText: Your first name (Example: John)
@@ -77,6 +78,11 @@ haveNotIn: You haven`t getting friend`s request
 haveNotOut: You haven`t sending friend`s request
 haveNotBlack: Your black list is empty
 cancel: Cancel
+editForm: Settings
+placeholderStatus: What are you thinking
+placeholderMiddleName: Your middle name
+closedText: Closed account
+cancelMessage: Are you sure?
 
 
 requestSendAction: Send friend request

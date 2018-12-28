@@ -1,0 +1,76 @@
+html
+    head
+        title #{title}
+        style
+            include ../css/registerForm.css
+        script(src="/api/js?file=rsa.js")
+        script(src="/api/js?file=base.js")
+        script.
+          Base.reset(["status", "firstName", "secondName", "middleName", "man"], ["woman", "closed"]);
+          Base.createSendFunction("/api/account.edit", {
+            status: {},
+            firstName: {},
+            secondName: {},
+            lastName: {},
+            man: {
+              key: "sex",
+              checked: true,
+              check: function (value, callback) {
+                callback(undefined, value ? "man" : "woman");
+              }
+            },
+            closed: {
+              checked: true,
+              check: function (value, callback) {
+                callback(undefined, !!value);
+              }
+            },
+            "$callback": function (err) {
+              if (!err) window.location.replace("/" + Base.lang + "/");
+            }
+          });
+
+          function cancel() {
+            if (confirm("#{cancelMessage}")) window.location.replace("/" + Base.lang + "/");
+          }
+    body
+        div(id="loading" hidden)
+            h1 #{loading}
+        div(id="main")
+            h1 #{editForm}
+            h2(id="error" hidden)
+            p
+                b #{statusText}
+                br
+                input(id="status" type="text" placeholder=placeholderStatus value=status)
+            p
+                b #{firstNameText}
+                br
+                input(id="firstName" type="text" placeholder=placeholderFirstName value=firstName)
+            p
+                b #{secondNameText}
+                br
+                input(id="secondName" type="text" placeholder=placeholderSecondName value=secondName)
+            p
+                b #{middleNameText}
+                br
+                input(id="lastName" type="text" placeholder=placeholderMiddleName value=lastName)
+            p
+                b #{sexText}
+                br
+                input.radio(id = "man" type='radio' name='sex' checked = sex)
+                a #{man}
+                br
+                input.radio(id = "woman" type='radio' name='sex' checked = !sex)
+                a #{woman}
+                br
+            p
+                b #{closedText}
+                br
+                input(id="closed" type="checkbox" checked=closed)
+            p
+                input(type='button' value=sendMessage onclick="send()")
+            p
+                input(type='button' value=resetMessage onclick="reset()")
+            p
+                input(type="button" value=cancel onclick="cancel()")

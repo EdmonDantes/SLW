@@ -21,6 +21,10 @@ html
             window.location.replace("/" + Base.lang + "/black");
           }
 
+          function showSettings() {
+            window.location.replace("/" + Base.lang + "/edit");
+          }
+
           function addFriend() {
             Base.sendRequestToServer("friends.add", {id: #{id}}, function (err, res) {
               if (err) alert(err.error.message);
@@ -84,6 +88,7 @@ html
                 input.menu(id="account" type="button" value=accountText onclick="showAccount()")
                 input.menu(id="friends" type="button" value=friendsText onclick="showFriends()")
                 input.menu(id="black" type="button" value=blackListText onclick="showBlack()")
+                input.menu(id="settings" type="button" value=editForm onclick="showSettings()")
                 input.menu(id="addFriend" type="button" value=addFriendText onclick="addFriend()" hidden = !canAddToFriend)
                 input.menu(id="deleteFriend" type="button" value=deleteFriendText onclick="deleteFriend()" hidden = !canDeleteFromFriend)
                 input.menu(id="addBlack" type="button" value=addBlackText onclick="addBlack()" hidden = !canAddToBlack)
@@ -91,7 +96,7 @@ html
             div.right
                 div(id="imageDiv")
                 if (lastName)
-                    p #{firstName} #{secondName} #{lastName}
+                    p #{firstName} #{lastName} #{secondName}
                 else
                     p #{firstName} #{secondName}
                 if (status)

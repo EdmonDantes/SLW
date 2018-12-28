@@ -33,7 +33,11 @@ b {
 }
 
 input {
-    width: calc(50vw - 1.5vw - 3px - 1.5vw);
+    width: calc(50vw - 3vw - 3px);
+}
+
+form.radio {
+    margin-left: 1.5vw;
 }
 
 input.radio {

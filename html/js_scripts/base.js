@@ -106,12 +106,8 @@ Base = {
 
   getChecked: function (id) {
     let tmp = document.getElementById(id);
-    if (tmp) return tmp.cheched;
+    if (tmp) return tmp.checked;
     else return undefined;
-  },
-
-  getState: function (id) {
-    return this.getValue(id) || this.getChecked(id);
   },
 
   createSendFunction: function (url, obj) {
@@ -121,7 +117,7 @@ Base = {
       let promises = [];
       for (let [key, value] of Object.entries(obj)) {
         let key0 = value.key || key;
-        sendObject[key0] = Base.getState(key);
+        sendObject[key0] = value.checked ? Base.getChecked(key) : Base.getValue(key);
         if (value.check) {
           promises.push(new Promise((res, rej) => {
             value.check(sendObject[key0], (err0, res0) => {
@@ -144,13 +140,13 @@ Base = {
           if (err0) {
             errorObject.innerText = err0.error.message;
             errorObject.hidden = false;
-          }
+            if (obj["$callback"]) obj["$callback"](err0);
+          } else if (obj["$callback"]) obj["$callback"]();
         }, Base.lang, JSON.stringify(sendObject));
       }, (err) => {
-        if (err) {
-          errorObject.innerText = err.message;
-          errorObject.hidden = false;
-        }
+        errorObject.innerText = err.message;
+        errorObject.hidden = false;
+        if (obj["$callback"]) obj["$callback"](err);
       });
     };
   }

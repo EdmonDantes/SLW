@@ -308,6 +308,11 @@ let _live_lib_base = function () {
       process.exit(0);
     });
 
+    process.stdin.setEncoding("utf8");
+    process.stdin.on('end', () => {
+      global.LiveLib.getLogger().debugm("Base", "process.stdin ended");
+    });
+
     return base;
   } catch (err) {
     global.LiveLib.base.__CORE_ERROR(4, err);
