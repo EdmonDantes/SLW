@@ -83,6 +83,8 @@ placeholderStatus: What are you thinking
 placeholderMiddleName: Your middle name
 closedText: Closed account
 cancelMessage: Are you sure?
+exit: Exit
+exitMessage: Are you sure?
 
 
 requestSendAction: Send friend request

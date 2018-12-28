@@ -294,6 +294,8 @@ function renderUserForm(res, id, token, lang, callback) {
       res0.deletedBlackAction = locale.getSync("deletedBlackAction", lang);
       res0.deletedFriendAction = locale.getSync("deletedFriendAction", lang);
       res0.editForm = locale.getSync("editForm", lang);
+      res0.exit = locale.getSync("exit", lang);
+      res0.exitMessage = locale.getSync("exitMessage", lang);
       res.render(path.join(folder, "pug_templates", "userForm.pug"), res0);
     }
   });

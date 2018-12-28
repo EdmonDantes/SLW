@@ -10,7 +10,7 @@ div.left {
     display: grid;
     width: auto;
     align-self: flex-start;
-    grid-template-rows: repeat(8, 40px);
+    grid-template-rows: repeat(9, 40px);
 }
 
 div.right {

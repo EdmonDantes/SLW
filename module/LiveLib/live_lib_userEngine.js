@@ -349,6 +349,13 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
+    users.prototype.resetToken = function (token, callback) {
+      that.db.update("tokens", {time: 0, "$where": "token = " + token}, (err, res) => {
+        if (err) callback(error.serv(err));
+        else callback();
+      });
+    };
+
     users.prototype.createAction = function (token, action_str, permission_str, handler, callback) {
       let that = this;
       that.validToken(token, (err, res) => {

@@ -80,6 +80,8 @@ placeholderStatus: О чём вы думаете?
 placeholderMiddleName: Ваше отчество
 closedText: Закрытый аккаунт
 cancelMessage: Вы уверены, что хотите отметить изменения?
+exit: Выход
+exitMessage: Вы уверены
 
 
 requestSendAction: Запрос в друзья отправлен
