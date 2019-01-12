@@ -1,3 +1,7 @@
+/*
+Copyright © 2019 Ilya Loginov. All rights reserved.
+Please email dantes2104@gmail.com if you would like permission to do something with the contents of this repository
+*/
 let _live_lib_base = function () {
   try {
     //Check from init lib
@@ -144,7 +148,6 @@ let _live_lib_base = function () {
       }
       return tmp;
     };
-
 
 
     //Parent for all class in LiveLib

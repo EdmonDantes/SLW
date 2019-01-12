@@ -23,13 +23,13 @@ let live_lib_userEngine = function (settings) {
       let db = this.db = new Database(host, user, password, port, database, count_pools);
       this.status = 0;
       this.addLoaded = function () {
-        if (this.status > 1) callback();
+        if (this.status > 3) callback();
         else this.status++;
       };
       this.folder = path.resolve(folder);
 
       db.createTable("servers",
-        {name: "id", type: UTYNYINT(), notnull: true, autoincrement: true, primary: true},
+        {name: "id", type: UTINYINT(), notnull: true, autoincrement: true, primary: true},
         {name: "ip", type: VARCHAR(28), notnull: true, unique: true},
         {name: "key", type: VARCHAR(255, true), notnull: true, unique: true},
         err => {
@@ -55,41 +55,27 @@ let live_lib_userEngine = function (settings) {
         }
       });
 
-      db.createTable("countries",
-        {name: "id", type: UINT(), primary: true, autoincrement: true},
-        {name: "country", type: VARCHAR(60)},
-        err => {
-          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
-        });
-
-      db.createTable("cities",
-        {name: "id", type: UINT(), primary: true, autoincrement: true},
-        {name: "city", type: VARCHAR(85)},
-        err => {
-          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
-        });
-
       db.createTable("users",
         {name: "id", type: UINT(), primary: true, autoincrement: true}, // ID
-        {name: "login", type: VARCHAR(80), unique: true, notnull: true}, // Логин для входа в профиль
-        {name: "password", type: VARCHAR(60, true), notnull: true}, // Пароль в зашифрованном виде
+        {name: "login", type: VARCHAR(80, false, "latin1"), unique: true, notnull: true}, // Логин для входа в профиль
+        {name: "password", type: VARCHAR(60, true, "latin1"), notnull: true}, // Пароль в зашифрованном виде
         {name: "passwordSalt", type: VARCHAR(29, true), notnull: true}, // Соль пароля
-        {name: "firstName", type: VARCHAR(120, true), notnull: true}, // Имя
-        {name: "secondName", type: VARCHAR(120, true), notnull: true}, // Фамилия
-        {name: "lastName", type: VARCHAR(120, true), notnull: true, default: "''"}, // Отчество
-        {name: "sex", type: BIT(), notnull: true}, // Пол
-        {name: "screen_name", type: VARCHAR(120, true), notnull: true, default: "''"}, // Ссылка на профиль
-        {name: "bdate", type: VARCHAR(10, true), notnull: true, default: "''"}, // День рождения
-        {name: "closed", type: BIT(), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
-        {name: "country", type: UINT(), foreign: {table: "countries", key: "id"}}, // Страна
-        {name: "city", type: UINT(), foreign: {table: "cities", key: "id"}}, // Город
-        {name: "mobile_phone", type: VARCHAR(12), notnull: true, default: "''"}, // Мобильный телефон
-        {name: "home_phone", type: VARCHAR(12), notnull: true, default: "''"}, // Домашний телефон
-        {name: "site", type: VARCHAR(60, true), notnull: true, default: "''"}, // Сайт
-        {name: "status", type: VARCHAR(60, true), notnull: true, default: "''"}, // Статус на станице
-        {name: "verified", type: BIT(), default: "b'0'"}, // Верифицированна ли страница
-        {name: "banned", type: BIT(), default: "b'0'"}, // Забанена ли страница
-        {name: "deleted", type: BIT(), default: "b'0'"}, // Удалена ли страница
+        {name: "firstName", type: VARCHAR(120, true, "utf8mb4"), notnull: true}, // Имя
+        {name: "secondName", type: VARCHAR(120, true, "utf8mb4"), notnull: true}, // Фамилия
+        {name: "lastName", type: VARCHAR(120, true, "utf8mb4"), notnull: true, default: "''"}, // Отчество
+        {name: "sex", type: BIT(1), notnull: true}, // Пол
+        //TODO: create support in server.js {name: "screen_name", type: VARCHAR(120, true, "latin1"), notnull: true, default: "''"}, // Ссылка на профиль
+        {name: "bdate", type: VARCHAR(10, false, "latin1"), notnull: true, default: "''"}, // День рождения
+        {name: "closed", type: BIT(1), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
+        {name: "country", type: VARCHAR(60, false, "utf8mb4")}, // Страна
+        {name: "city", type: VARCHAR(85, false, "utf8mb4")}, // Город
+        {name: "mobile_phone", type: VARCHAR(12, false, "latin1"), notnull: true, default: "''"}, // Мобильный телефон
+        {name: "home_phone", type: VARCHAR(12, false, "latin1"), notnull: true, default: "''"}, // Домашний телефон
+        {name: "site", type: VARCHAR(60, false, "latin1"), notnull: true, default: "''"}, // Сайт
+        {name: "status", type: VARCHAR(200, true, "utf8mb4"), notnull: true, default: "''"}, // Статус на станице
+        {name: "verified", type: BIT(1), notnull: true, default: "b'0'"}, // Верифицированна ли страница
+        {name: "banned", type: BIT(1), notnull: true, default: "b'0'"}, // Забанена ли страница
+        {name: "deleted", type: BIT(1), notnull: true, default: "b'0'"}, // Удалена ли страница
         {name: "balance", type: UINT(), notnull: true, default: "0"},
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
@@ -97,21 +83,21 @@ let live_lib_userEngine = function (settings) {
 
       db.createTable("tokens",
         {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id токена
-        {name: "token", type: VARCHAR(TOKEN_LENGTH, true), unique: true, notnull: true}, // Токен
+        {name: "token", type: VARCHAR(TOKEN_LENGTH, true, "latin1"), unique: true, notnull: true}, // Токен
         {name: "user_id", type: UINT(), foreign: {table: "users", key: "id"}, notnull: true}, //Id пользователя
         {name: "permissions", type: UINT(), notnull: true}, // Права токена
-        {name: "create_time", type: BIGINT(), notnull: true}, // Время создания токена
-        {name: "last_using", type: BIGINT(), notnull: true}, // Время последнего использования токена
-        {name: "time", type: BIGINT(), notnull: true}, // Время действия токена в миллисекундах
+        {name: "create_time", type: UINT(), notnull: true}, // Время создания токена
+        {name: "last_using", type: UINT(), notnull: true}, // Время последнего использования токена
+        {name: "time", type: UINT(), notnull: true}, // Время действия токена в секундах
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("relations",
-        {name: "id", type: "INT UNSIGNED", primary: true, notnull: true, autoincrement: true}, // Id отношений
-        {name: "user_id_1", type: "INT UNSIGNED", notnull: true}, // Первый пользователь (Всегда должен быть меньше второго)
-        {name: "user_id_2", type: "INT UNSIGNED", notnull: true, unique: ["user_id_1"]}, //Второй пользователь (Всегда должен быть больше первого)
-        {name: "status", type: "BIT(3)", notnull: true, default: "b'01'"}, // Модификатор отношений
+        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id отношений
+        {name: "user_id_1", type: UINT(), notnull: true}, // Первый пользователь (Всегда должен быть меньше второго)
+        {name: "user_id_2", type: UINT(), notnull: true, unique: ["user_id_1"]}, //Второй пользователь (Всегда должен быть больше первого)
+        {name: "status", type: BIT(3), notnull: true, default: "b'011'"}, // Модификатор отношений
         // 0 - друзья
         // 1 - user_id_1 отправил запрос на дружбу
         // 2 - user_id_2 отправил запрос на дружбу
@@ -127,7 +113,7 @@ let live_lib_userEngine = function (settings) {
       db.createTable("photos",
         {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true}, // Id фотографии
         {name: "owner", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Владелец фотографии
-        {name: "server", type: UTYNYINT(), notnull: true, foreign: {table: "servers", key: "id"}}, // Сервер для хранения фотографии
+        {name: "server", type: UTINYINT(), notnull: true, foreign: {table: "servers", key: "id"}}, // Сервер для хранения фотографии
         {name: "access", type: BIT(2), notnull: true, default: "b'00'"}, // Модификатор доступа для фотографии
         // 0 - Доступ только для пользователя
         // 1 - Доступ только для друзей
@@ -146,15 +132,108 @@ let live_lib_userEngine = function (settings) {
         });
 
       db.createTable("actions",
-        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id действия
+        {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true}, // Id действия
         {name: "token_id", type: UINT(), notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
         {name: "type_action", type: USMALLINT(), notnull: true}, // Вид действия
-        {name: "time", type: BIGINT(), notnull: true}, // Время совершения действия
+        {name: "time", type: UINT(), notnull: true}, // Время совершения действия
         {name: "success", type: BIT(), notnull: true, default: "b'0'"}, // Удачно ли действие завершено
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("connections",
+        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true},
+        {name: "token_id", type: UINT(), unique: true, notnull: true, foreign: {table: "tokens", key: "id"}},
+        {name: "server_id", type: UTINYINT(), notnull: true, foreign: {table: "servers", key: "id"}},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("peers",
+        {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true},
+        {name: "name", type: VARCHAR(120, true), notnull: true},
+        {name: "photo_id", type: BIGINT(), foreign: {table: "photos", key: "id"}},
+        {name: "create_date", type: UINT(), notnull: true},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("messages",
+        {name: "id", type: BIGINT(), notnull: true, autoincrement: true, primary: true},
+        {name: "text", type: VARCHAR(1000, true), notnull: true},
+        {name: "date", type: UINT(), notnull: true},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("users_peers",
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
+        {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}, unique: ["user_id"]},
+        {name: "is_admin", type: BIT(1), notnull: true, default: "b'0'"},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("peers_messages",
+        {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}},
+        {name: "message_chat_local_id", type: UINT(), notnull: true, unique: ["peer_id"]},
+        {
+          name: "message_id",
+          type: BIGINT(),
+          notnull: true,
+          unique: ["peer_id"],
+          foreign: {table: "messages", key: "id"}
+        },
+        err => {
+          if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
+          db.createRequest("CREATE TRIGGER `auto_increment_messages_chat_local_id` BEFORE INSERT ON `peers_messages` FOR EACH ROW SET NEW.message_chat_local_id = (SELECT COUNT(`peer_id`) + 1 FROM `peers_messages` WHERE `peer_id` = NEW.peer_id);", err => {
+            if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
+            that.addLoaded();
+          });
+        });
+
+      db.createTable("users_messages",
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
+        {name: "messages_user_local_id", type: UINT(), notnull: true},
+        {name: "data", type: BIT(2), notnull: true, default: "b'00'"},
+        // Первый бит отвечает за тип сообщения. 1 - исходящее, 0 - входящее
+        // Второй бит отвечает прочитано или нет. 1 - прочитано, 0 - нет
+        // По умолчанию добавляем входящие непрочитанные сообщения
+        err => {
+          if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
+          db.createRequest("CREATE TRIGGER `auto_increment_messages_user_local_id` BEFORE INSERT ON `users_messages` FOR EACH ROW SET NEW.messages_user_local_id = (SELECT COUNT(`user_id`) + 1 FROM `users_messages` WHERE `user_id` = NEW.user_id);", err => {
+            if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
+            that.addLoaded();
+          });
+        });
+
+      db.createTable("reply_messages",
+        {name: "message_id", type: BIGINT(), notnull: true, foreign: {table: "messages", key: "id"}},
+        {
+          name: "reply_id",
+          type: BIGINT(),
+          notnull: true,
+          foreign: {table: "messages", key: "id"},
+          unique: ["message_id"]
+        },
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      db.createTable("messages_photo",
+        {name: "message_id", type: BIGINT(), notnull: true, foreign: {table: "messages", key: "id"}},
+        {
+          name: "photo_id",
+          type: BIGINT(),
+          notnull: true,
+          foreign: {table: "photos", key: "id"},
+          unique: ["message_id"]
+        },
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
           that.addLoaded();
         });
+
       fs.readFile("./key.key", "utf8", (err, res) => {
         if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         else {
@@ -163,6 +242,8 @@ let live_lib_userEngine = function (settings) {
         }
         that.addLoaded();
       });
+
+
     };
 
     let users = global.LiveLib.userEngine;
@@ -195,6 +276,14 @@ let live_lib_userEngine = function (settings) {
       "photos.get",
       "photos.setTarget",
       "photos.getTarget",
+
+      "messages.createChat",
+      "messages.addUserToChat",
+      "messages.deleteUserFromChat",
+      "messages.getAllChats",
+      "messages.getChatById",
+      "messages.markAsRead",
+      "messages.sendMessage"
     ];
 
     function getActionId(action) {
@@ -205,7 +294,8 @@ let live_lib_userEngine = function (settings) {
       "account",
       "blacklist",
       "friends",
-      "photos"
+      "photos",
+      "messages"
     ];
 
     function getPermissionId(permission) {
@@ -220,9 +310,9 @@ let live_lib_userEngine = function (settings) {
         token: token,
         user_id: user_id,
         permissions: permissions > -1 ? permissions : users.ALL_PERM,
-        create_time: Date.now(),
-        last_using: Date.now(),
-        time: time > -1 ? time : -1
+        create_time: Date.now() / 1000,
+        last_using: Date.now() / 1000,
+        time: time > 0 ? time : 0
       }, (err) => {
         if (err) {
           if (callback) callback(error.serv(err));
@@ -342,7 +432,7 @@ let live_lib_userEngine = function (settings) {
       that.db.select("tokens", {where: "token = '" + token + "'"}, (err, res) => {
         if (err) callback(error.serv(err));
         else if (res && res.length > 0 && res[0]) {
-          if (res[0].time < 0 || ((res[0].last_using + res[0].time) > Date.now())) {
+          if (res[0].time < 1 || ((res[0].last_using + res[0].time) > (Date.now() / 1000))) {
             callback(undefined, res[0]);
           } else callback(new error(4, "users.token.old"));
         } else callback(new error(9, "users.wrong.token"));
@@ -350,13 +440,13 @@ let live_lib_userEngine = function (settings) {
     };
 
     users.prototype.resetToken = function (token, callback) {
-      that.db.update("tokens", {time: 0, "$where": "token = " + token}, (err, res) => {
+      this.db.update("tokens", {time: 1, "$$where": "token = '" + token + "'"}, (err, res) => {
         if (err) callback(error.serv(err));
         else callback();
       });
     };
 
-    users.prototype.createAction = function (token, action_str, permission_str, handler, callback) {
+    users.prototype.createAction = function (token, action_str, permission_str, handler, callback, time) {
       let that = this;
       that.validToken(token, (err, res) => {
         if (err) {
@@ -375,7 +465,7 @@ let live_lib_userEngine = function (settings) {
                     that.db.insert("actions", {
                       token_id: res.id,
                       type_action: getActionId(action_str),
-                      time: Date.now(),
+                      time: time ? time : Date.now() / 1000,
                       success: !!result
                     }, err => {
                       if (err && handler) handler(error.serv(err));
@@ -388,7 +478,10 @@ let live_lib_userEngine = function (settings) {
                     if (handler) handler(error.serv(err0));
                     end(false);
                   }
-                  that.db.update("tokens", {last_using: Date.now(), "$$where": "token = '" + token + "'"}, err1 => {
+                  that.db.update("tokens", {
+                    last_using: Date.now() / 1000,
+                    "$$where": "token = '" + token + "'"
+                  }, err1 => {
                     if (handler) {
                       if (err1)
                         handler(error.serv(err));
@@ -458,7 +551,7 @@ let live_lib_userEngine = function (settings) {
       });
     }
 
-    function __func003(user_id, that, callback) { // get normal user from db
+    function __func003(user_id, that, callback) { // get normalize user from db
       __func002(user_id, that, (err, res) => {
         if (err) callback(err);
         else {
@@ -562,7 +655,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.accountGet = function (user_id, token, callback) {
       this.createAction(token, "account.get", "account", callback, (user, end, that) => {
-        user_id = (user_id < 0 ? user.id : user_id);
+        user_id = (!user_id || user_id < 1 ? user.id : user_id);
         __func001(user.id, user_id, that, (err, res) => {
           if (err) {
             if (err.code === 10) {
@@ -1285,6 +1378,54 @@ let live_lib_userEngine = function (settings) {
         }
       });
     };
+
+    users.prototype.messagesCreateChat = function (name, users_ids, token, callback) {
+      this.createAction(token, "messages.createChat", "messages", callback, (user, end, that) => {
+        let all = true;
+        let promises = [];
+        for (let obj of users_ids) {
+          promises.push(new Promise((res, rej) => {
+            __func000(user.id, obj, that, (err0, res0) => {
+              if (err0) rej(err0);
+              else {
+                if (res0 > 0) all = false;
+                res();
+              }
+            });
+          }));
+        }
+        Promise.all(promises).then(res => {
+          if (!all) callback(new error(31, "messages.wrong.user"));
+          else {
+            that.db.insert("peers", {name: name, date: Date.now() / 1000}, (err0, res0) => {
+              if (err0) callback(error.serv(err0));
+              else {
+                let promises0 = [];
+                promises0.push(new Promise((res, rej) => {
+                  that.db.insert("users_peers", {user_id: user.id, peer_id: res0.insertId, is_admin: 1}, err1 => {
+                    if (err1) rej(error.serv(err1));
+                    else res();
+                  });
+                }));
+                for (let obj of users_ids) {
+                  promises0.push(new Promise((res, rej) => {
+                    that.db.insert("users_peers", {user_id: obj, peer_id: res0.insertId, is_admin: 0}, err1 => {
+                      if (err1) rej(error.serv(err1));
+                      else res();
+                    });
+                  }));
+                }
+                Promise.all(promises0).then(res => {
+                  callback()
+                }, callback);
+              }
+            });
+          }
+        }, callback);
+      });
+    };
+
+    //user.prototype.messagesAddUserToChat = function(peer_id, user_id, token, callback){}
 
     return global.LiveLib.userEngine;
   } catch (err) {

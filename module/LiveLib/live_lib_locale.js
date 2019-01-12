@@ -1,3 +1,7 @@
+/*
+Copyright © 2019 Ilya Loginov. All rights reserved.
+Please email dantes2104@gmail.com if you would like permission to do something with the contents of this repository
+*/
 let live_lib_locale = function () {
   if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();
   if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
@@ -25,8 +29,7 @@ let live_lib_locale = function () {
       tmp.loadData(err => {
         if (err) {
           if (callback) callback(err);
-        }
-        else {
+        } else {
           map.set(locale, tmp);
           callback(null, tmp);
         }

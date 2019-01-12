@@ -1,3 +1,7 @@
+/*
+Copyright © 2019 Ilya Loginov. All rights reserved.
+Please email dantes2104@gmail.com if you would like permission to do something with the contents of this repository
+*/
 let _live_lib_permission = function () {
   try {
     if (!global.LiveLib || !global.LiveLib.base) require("./live_lib_base")();

@@ -1,3 +1,8 @@
+/*
+Copyright © 2019 Ilya Loginov. All rights reserved.
+Please email dantes2104@gmail.com if you would like permission to do something with the contents of this repository
+*/
+
 require("./module/live_lib")("net", "userEngine", "preference", "locale");
 let server = new LiveLib.net();
 let locale = new LiveLib.locale("./locales");
@@ -61,6 +66,11 @@ methods["demo"] = res => res.res.sendFile(path.join(folder, "html_static", "test
 
 methods["js"] = res => res.res.sendFile(path.join(folder, "js_scripts", res.file));
 
+methods["swagger"] = res => {
+  res.res.header("Access-Control-Allow-Origin", "*");
+  res.res.sendFile(path.join(folder, "swagger.json"));
+}
+
 
 function sendError(res, err, lang) {
   res.send({error: {code: err.code, message: locale.getSync(err.message, lang)}});
@@ -115,9 +125,14 @@ pages["login"] = (res, callback) => {
 };
 
 pages["reset"] = (res, callback) => {
-  res.res.cookie("token", "");
-  res.res.header("Location", "/");
-  res.res.sendStatus(303);
+  users.resetToken(res.token, err => {
+    if (err) callback(err);
+    else {
+      res.res.cookie("token", "");
+      res.res.header("Location", "/");
+      res.res.sendStatus(303);
+    }
+  });
 };
 
 pages["friends"] = (res, callback) => {
@@ -300,8 +315,6 @@ function renderUserForm(res, id, token, lang, callback) {
     }
   });
 }
-
-let serversMethods = {};
 
 pages["postjoin"] = (res, callback) => {
   if (res.token) {
