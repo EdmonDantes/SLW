@@ -69,7 +69,7 @@ methods["js"] = res => res.res.sendFile(path.join(folder, "js_scripts", res.file
 methods["swagger"] = res => {
   res.res.header("Access-Control-Allow-Origin", "*");
   res.res.sendFile(path.join(folder, "swagger.json"));
-}
+};
 
 
 function sendError(res, err, lang) {
@@ -245,6 +245,13 @@ pages["user:id"] = (res) => {
     res.res.sendStatus(303);
   }
 };
+
+
+server.get("/swagger/:file", (res) => {
+  if (res.req.params.file) {
+    res.res.sendFile(path.join(folder, "swagger-ui-dist", res.req.params.file));
+  } else res.res.sendFile(path.join(folder, "swagger-ui-dist", "index.html"));
+});
 
 pages[""] = (res, callback) => {
   if (res.token) {
