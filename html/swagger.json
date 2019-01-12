@@ -1,5 +1,5 @@
 {
-  "swagger": "2.0",
+  "openapi": "3.0.0",
   "info": {
     "version": "1.2",
     "description": "You can use API without specific lang or write lang in path (Example: http://80.211.26.238:8080/ru-RU/api/method) or add parameter in query or body. Default lang - en-US",
