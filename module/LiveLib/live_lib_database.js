@@ -77,7 +77,7 @@ let live_lib_database = function (settings) {
       let that = this;
 
       function __func13() {
-        that.stackOfActions[index++]((err0, res0) => {
+        that.stackOfActions[index++]((err0) => {
           if (err0) handler(err0);
           if (index < that.stackOfActions.length) {
             __func13();
@@ -208,7 +208,7 @@ let live_lib_database = function (settings) {
             args[callback_index] = (err, res, fields) => {
               if (err) {
                 old_callback(err);
-                callback(err);
+                callback(undefined);
               } else {
                 old_callback(undefined, res, fields);
                 callback();

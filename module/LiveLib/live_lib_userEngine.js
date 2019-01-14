@@ -103,7 +103,7 @@ let live_lib_userEngine = function (settings) {
        */
       db.createTable("users_cards",
         {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
-        {name: "card_id", type: UINT(), notnull: true, foreign: {table: "cards", key: "id"}, unique: ["user_id"]},
+        {name: "card_id", type: BIGINT(), notnull: true, foreign: {table: "cards", key: "id"}, unique: ["user_id"]},
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
