@@ -7,11 +7,15 @@ let live_lib_engine = function () {
   if (!global.LiveLib || global.LiveLib.Version < 1.2) return false;
 
   let base = global.LiveLib.base;
+  global.LiveLib.loadLiveModule("logging");
 
   global.LiveLib.ErrorMessage = function (code, message, err) {
     this.code = code;
     this.message = message;
     this.err = err;
+    if (err) {
+      global.LiveLib.getLogger().debug("Create error message for user: ", err);
+    }
     Error.captureStackTrace(this, this.constructor);
   };
 
