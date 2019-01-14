@@ -9,20 +9,20 @@ html
           Base.reset(["status", "firstName", "secondName", "middleName", "man"], ["woman", "closed"]);
           Base.createSendFunction("/api/account.edit", {
             status: {},
-            firstName: {},
-            secondName: {},
-            lastName: {},
-            man: {
-              key: "sex",
-              checked: true,
-              check: function (value, callback) {
-                callback(undefined, value ? "man" : "woman");
-              }
-            },
             closed: {
               checked: true,
               check: function (value, callback) {
                 callback(undefined, !!value);
+              }
+            },
+            photo: {
+              get: function (value, callback) {
+                if (value && (value.files && value.files[0] || value.target && value.target.files && value.target.files[0]))
+                  Base.downloadImage(value.files ? value.files[0] : value.target.files[0], 3, function (err, res) {
+                    if (err) callback(err);
+                    else Base.sendRequestToServer("photos.setTarget", {id: res.response, target: 1}, callback);
+                  });
+                else callback(undefined, undefined);
               }
             },
             "$callback": function (err) {
@@ -44,26 +44,9 @@ html
                 br
                 input(id="status" type="text" placeholder=placeholderStatus value=status)
             p
-                b #{firstNameText}
+                b #{photoText}
                 br
-                input(id="firstName" type="text" placeholder=placeholderFirstName value=firstName)
-            p
-                b #{secondNameText}
-                br
-                input(id="secondName" type="text" placeholder=placeholderSecondName value=secondName)
-            p
-                b #{middleNameText}
-                br
-                input(id="lastName" type="text" placeholder=placeholderMiddleName value=lastName)
-            p
-                b #{sexText}
-                br
-                input.radio(id = "man" type='radio' name='sex' checked = sex)
-                a #{man}
-                br
-                input.radio(id = "woman" type='radio' name='sex' checked = !sex)
-                a #{woman}
-                br
+                input(id="photo" type="file" accept="image/*")
             p
                 b #{closedText}
                 br

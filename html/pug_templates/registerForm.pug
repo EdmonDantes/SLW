@@ -7,7 +7,7 @@ html
         script(src="/api/js?file=rsa.js")
         script(src="/api/js?file=base.js")
         script.
-          Base.reset(["login", "password", "firstName", "secondName", "man"], ["woman"]);
+          Base.reset(["login", "password", "password2"]);
           Base.createSendFunction("/postjoin", {
             login: {},
             password: {
@@ -15,12 +15,9 @@ html
                 Base.encrypt(value, callback);
               }
             },
-            firstName: {},
-            secondName: {},
-            man: {
-              key: "sex",
+            password2: {
               check: function (value, callback) {
-                callback(undefined, value ? "man" : "woman");
+                Base.encrypt(value, callback);
               }
             }
           });
@@ -37,24 +34,11 @@ html
             p
                 b #{password}
                 br
-                input(id = "password" name='password' type='text' placeholder=placeholderPassword required)
+                input(id = "password" name='password' type='password' placeholder=placeholderPassword required)
             p
-                b #{firstName}
+                b #{repeat_password}
                 br
-                input(id = "firstName" name='firstName' type='text' placeholder=placeholderFirstName required)
-            p
-                b #{secondName}
-                br
-                input(id = "secondName" name='secondName' type='text' placeholder=placeholderSecondName required)
-            p
-                b #{sexText}
-                br
-                input.radio(id = "man" name='sex' type='radio' value='man' checked)
-                a #{man}
-                br
-                input.radio(id = "woman" name='sex' type='radio' value='woman')
-                a #{woman}
-                br
+                input(id = "password2" name='password' type='password' placeholder=placeholderPassword required)
             p
                 input(type="button" onclick="send()" value=sendMessage)
             p

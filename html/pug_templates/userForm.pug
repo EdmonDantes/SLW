@@ -100,37 +100,8 @@ html
                 input.menu(id="deleteBlack" type="button" value=deleteBlackText onclick="deleteBlack()" hidden = !canDeleteFromBlack)
             div.right
                 div(id="imageDiv")
-                if (lastName)
-                    p #{firstName} #{lastName} #{secondName}
-                else
-                    p #{firstName} #{secondName}
+                if (login)
+                    p #{login}
                 if (status)
-                    h2 #{statusText}: #{status}
-                    br
-                if (sex)
-                    p #{sexText}: #{sex}
-                    br
-                if (balance > -1)
-                    p #{balanceText}: #{balance}
-                    br
-                if (bdate)
-                    h3 #{bdateText}: #{bdate}
-                    br
-                if (country)
-                    h3 #{countryText}: #{country}
-                    br
-                if (city)
-                    h3 #{cityText}: #{city}
-                    br
-                if (mobile_phone)
-                    h3 #{mobilePhoneText}: #{mobile_phone}
-                    br
-                if (home_phone)
-                    h3 #{homePhoneText}: #{home_phone}
-                    br
-                if (site)
-                    h3 #{siteText}: #{site}
-                    br
-                if (verified)
-                    h3 #{verifiedText}
+                    P #{statusText}: #{status}
                     br

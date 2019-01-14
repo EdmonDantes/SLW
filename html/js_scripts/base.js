@@ -23,7 +23,7 @@ Base = {
   sendRequest: function (url, object, headers, callback, lang, post_object) {
     let obj = "";
     if (object) {
-      obj += "?"
+      obj += "?";
       for (let [key, value] of Object.entries(object)) {
         obj += key + "=" + value + "&";
       }
@@ -122,7 +122,18 @@ Base = {
       let promises = [];
       for (let [key, value] of Object.entries(obj)) {
         let key0 = value.key || key;
-        sendObject[key0] = value.checked ? Base.getChecked(key) : Base.getValue(key);
+        if (value.get) {
+          promises.push(new Promise((res, rej) => {
+            value.get(document.getElementById(key), (err0, res0) => {
+              if (err0) rej(err0);
+              else {
+                sendObject[key0] = res0;
+                res();
+              }
+            });
+          }));
+        } else
+          sendObject[key0] = value.checked ? Base.getChecked(key) : Base.getValue(key);
         if (value.check) {
           promises.push(new Promise((res, rej) => {
             value.check(sendObject[key0], (err0, res0) => {
@@ -149,13 +160,20 @@ Base = {
           } else if (obj["$callback"]) obj["$callback"]();
         }, Base.lang, JSON.stringify(sendObject));
       }, (err) => {
-        errorObject.innerText = err.message;
+        errorObject.innerText = err.error ? err.error.message : err.message;
         errorObject.hidden = false;
         if (obj["$callback"]) obj["$callback"](err);
       });
     };
+  },
+
+  downloadImage: function (image, access, callback) {
+    let form = new FormData();
+    form.append("photo", image, image.name);
+    Base.sendRequestToServer("photos.add", {access: access}, callback, undefined, true, form);
   }
 };
+
 
 Base.url.prototype.getDomain = function () {
   return this.url.length > 0 ? this.url[0] : "";

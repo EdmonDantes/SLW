@@ -28,6 +28,8 @@ users.wrong.first.name: Неправильное имя
 users.wrong.second.name: Неправильная фамилия
 users.wrong.sex: Пол не найден
 users.wrong.login.or.password: Неправильные логин и/или пароль
+messages.wrong.user: Невозможно добавить пользователя в чат
+users.wrong.repeated.password: Повторите пароль правильно
 
 code404: Страница не найдена
 
@@ -37,6 +39,7 @@ domenText: Сайт
 balanceText: Баланс
 loginText: Логин
 passwordText: Пароль
+repeatedPasswordText: Повторите пароль
 firstNameText: Имя
 secondNameText: Фамилия
 middleNameText: Отчество
@@ -81,8 +84,8 @@ placeholderMiddleName: Ваше отчество
 closedText: Закрытый аккаунт
 cancelMessage: Вы уверены, что хотите отметить изменения?
 exit: Выход
-exitMessage: Вы уверены
-
+exitMessage: Вы уверены?
+photoText: Фото
 
 requestSendAction: Запрос в друзья отправлен
 addedBlackAction: Пользователь добавлен в чёрный список

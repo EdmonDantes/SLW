@@ -13,7 +13,7 @@ let live_lib_userEngine = function (settings) {
     let path = base.getLib("path");
     let nodeRSA = base.getLib("node-rsa");
 
-    const TOKEN_LENGTH = 240;
+    const TOKEN_LENGTH = 240; // Длина токена
 
 
     global.LiveLib.userEngine = function (server_ip, host = "localhost", user = "user", password = "password", database = "database", photo_folder = "/tmp/photo", folder = "./html", port, count_pools = 20, callback) {
@@ -28,10 +28,14 @@ let live_lib_userEngine = function (settings) {
       };
       this.folder = path.resolve(folder);
 
+
+      /*
+       * Таблица серверов, для масштабируемости и связи между ними
+       */
       db.createTable("servers",
-        {name: "id", type: UTINYINT(), notnull: true, autoincrement: true, primary: true},
-        {name: "ip", type: VARCHAR(28), notnull: true, unique: true},
-        {name: "key", type: VARCHAR(255, true), notnull: true, unique: true},
+        {name: "id", type: UTINYINT(), notnull: true, autoincrement: true, primary: true}, // ID
+        {name: "ip", type: VARCHAR(28), notnull: true, unique: true}, // Ip сервера
+        {name: "key", type: VARCHAR(255, true), notnull: true, unique: true}, // Ключ для доступа к командам сервера
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -55,28 +59,51 @@ let live_lib_userEngine = function (settings) {
         }
       });
 
+      /*
+       * Таблица пользователей
+       */
       db.createTable("users",
         {name: "id", type: UINT(), primary: true, autoincrement: true}, // ID
         {name: "login", type: VARCHAR(80, false, "latin1"), unique: true, notnull: true}, // Логин для входа в профиль
         {name: "password", type: VARCHAR(60, true, "latin1"), notnull: true}, // Пароль в зашифрованном виде
-        {name: "passwordSalt", type: VARCHAR(29, true), notnull: true}, // Соль пароля
-        {name: "firstName", type: VARCHAR(120, true, "utf8mb4"), notnull: true}, // Имя
-        {name: "secondName", type: VARCHAR(120, true, "utf8mb4"), notnull: true}, // Фамилия
-        {name: "lastName", type: VARCHAR(120, true, "utf8mb4"), notnull: true, default: "''"}, // Отчество
-        {name: "sex", type: BIT(1), notnull: true}, // Пол
+        {name: "passwordSalt", type: VARCHAR(29, true, "latin1"), notnull: true}, // Соль пароля
         //TODO: create support in server.js {name: "screen_name", type: VARCHAR(120, true, "latin1"), notnull: true, default: "''"}, // Ссылка на профиль
-        {name: "bdate", type: VARCHAR(10, false, "latin1"), notnull: true, default: "''"}, // День рождения
-        {name: "closed", type: BIT(1), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
-        {name: "country", type: VARCHAR(60, false, "utf8mb4")}, // Страна
-        {name: "city", type: VARCHAR(85, false, "utf8mb4")}, // Город
-        {name: "mobile_phone", type: VARCHAR(12, false, "latin1"), notnull: true, default: "''"}, // Мобильный телефон
-        {name: "home_phone", type: VARCHAR(12, false, "latin1"), notnull: true, default: "''"}, // Домашний телефон
-        {name: "site", type: VARCHAR(60, false, "latin1"), notnull: true, default: "''"}, // Сайт
         {name: "status", type: VARCHAR(200, true, "utf8mb4"), notnull: true, default: "''"}, // Статус на станице
-        {name: "verified", type: BIT(1), notnull: true, default: "b'0'"}, // Верифицированна ли страница
+        {name: "closed", type: BIT(1), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
         {name: "banned", type: BIT(1), notnull: true, default: "b'0'"}, // Забанена ли страница
         {name: "deleted", type: BIT(1), notnull: true, default: "b'0'"}, // Удалена ли страница
-        {name: "balance", type: UINT(), notnull: true, default: "0"},
+        {name: "is_admin", type: BIT(1), notnull: true, default: "b'0'"}, // Является ли пользователь админом
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      /*
+       * Таблица карточек
+       */
+      db.createTable("types_cards",
+        {name: "id", type: UTINYINT(), primary: true, autoincrement: true},
+        {name: "name", type: VARCHAR(60, false, "latin1"), unique: true, notnull: true},
+        {name: "balance", type: UINT(), notnull: true},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      /*
+       * Таблица существующих карточек в системе
+       */
+      db.createTable("cards",
+        {name: "id", type: BIGINT(), autoincrement: true, primary: true},
+        {name: "type_card_id", type: UTINYINT(), notnull: true, unique: ["id"]},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+        });
+
+      /*
+       * Таблица имеющихся у пользователя карточек
+       */
+      db.createTable("users_cards",
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
+        {name: "card_id", type: UINT(), notnull: true, foreign: {table: "cards", key: "id"}, unique: ["user_id"]},
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -176,7 +203,6 @@ let live_lib_userEngine = function (settings) {
 
       db.createTable("peers_messages",
         {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}},
-        {name: "message_chat_local_id", type: UINT(), notnull: true, unique: ["peer_id"]},
         {
           name: "message_id",
           type: BIGINT(),
@@ -184,9 +210,11 @@ let live_lib_userEngine = function (settings) {
           unique: ["peer_id"],
           foreign: {table: "messages", key: "id"}
         },
+        {name: "message_chat_local_id", type: UINT(), notnull: true, unique: ["peer_id"]},
+        {name: "read", type: BIT(1), notnull: true, default: "b'0'"},
         err => {
           if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
-          db.createRequest("CREATE TRIGGER `auto_increment_messages_chat_local_id` BEFORE INSERT ON `peers_messages` FOR EACH ROW SET NEW.message_chat_local_id = (SELECT COUNT(`peer_id`) + 1 FROM `peers_messages` WHERE `peer_id` = NEW.peer_id);", err => {
+          else db.createRequest("CREATE TRIGGER `auto_increment_messages_chat_local_id` BEFORE INSERT ON `peers_messages` FOR EACH ROW SET NEW.message_chat_local_id = (SELECT COUNT(`peer_id`) + 1 FROM `peers_messages` WHERE `peer_id` = NEW.peer_id);", err => {
             if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
             that.addLoaded();
           });
@@ -194,6 +222,13 @@ let live_lib_userEngine = function (settings) {
 
       db.createTable("users_messages",
         {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
+        {
+          name: "message_id",
+          type: BIGINT(),
+          notnull: true,
+          unique: ["user_id"],
+          foreign: {table: "messages", key: "id"}
+        },
         {name: "messages_user_local_id", type: UINT(), notnull: true},
         {name: "data", type: BIT(2), notnull: true, default: "b'00'"},
         // Первый бит отвечает за тип сообщения. 1 - исходящее, 0 - входящее
@@ -201,7 +236,7 @@ let live_lib_userEngine = function (settings) {
         // По умолчанию добавляем входящие непрочитанные сообщения
         err => {
           if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
-          db.createRequest("CREATE TRIGGER `auto_increment_messages_user_local_id` BEFORE INSERT ON `users_messages` FOR EACH ROW SET NEW.messages_user_local_id = (SELECT COUNT(`user_id`) + 1 FROM `users_messages` WHERE `user_id` = NEW.user_id);", err => {
+          else db.createRequest("CREATE TRIGGER `auto_increment_messages_user_local_id` BEFORE INSERT ON `users_messages` FOR EACH ROW SET NEW.messages_user_local_id = (SELECT COUNT(`user_id`) + 1 FROM `users_messages` WHERE `user_id` = NEW.user_id);", err => {
             if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
             that.addLoaded();
           });
@@ -330,59 +365,49 @@ let live_lib_userEngine = function (settings) {
       try {
         if (user) {
           if (user.login && user.login.length > 3) {
-            if (user.firstName && user.firstName.length > 2) {
-              if (user.secondName && user.secondName.length > 2) {
-                if (user.sex !== undefined && user.sex !== null && (typeof user.sex === "string" || user.sex instanceof String)) {
-                  if (user.password) {
-                    user.password = this.keyRSA.decrypt(user.password, "utf-8");
-                    if (user.password > 3) {
-                      let that = this;
-                      bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
-                        if (err) {
-                          if (callback) callback(error.serv(err));
+            if (user.password && user.password2) {
+              user.password = this.keyRSA.decrypt(user.password, "utf-8");
+              user.password2 = this.keyRSA.decrypt(user.password2, "utf-8");
+              if (user.password.length > 3) {
+                if (user.password === user.password2 && user.password.length > 3) {
+                  let that = this;
+                  bcrypt.genSalt(users.SALT_LENGTH, (err, salt) => {
+                    if (err) {
+                      if (callback) callback(error.serv(err));
+                    } else {
+                      bcrypt.hash(user.password, salt, (err0, hash) => {
+                        if (err0) {
+                          if (callback) callback(error.serv(err0));
                         } else {
-                          bcrypt.hash(user.password, salt, (err0, hash) => {
-                            if (err0) {
-                              if (callback) callback(error.serv(err0));
-                            } else {
-                              user.passwordSalt = salt;
-                              user.password = hash;
-                              user.sex = user.sex.toLowerCase() === "man" ? 1 : 0;
-                              this.db.insert("users", user, (err1, res) => {
-                                if (err1 && err1[0]) {
-                                  if (callback) {
-                                    switch (err1[0].code) {
-                                      case 1062:
-                                        callback(new error(2, "users.wrong.login", err1[0]));
-                                        break;
-                                      default:
-                                        callback(error.serv(err1[0]));
-                                        break;
-                                    }
-                                  }
-                                } else {
-                                  that.createToken(res[0].insertId, -1, -1, callback);
+                          user.passwordSalt = salt;
+                          user.password = hash;
+                          user.sex = user.sex.toLowerCase() === "man" ? 1 : 0;
+                          this.db.insert("users", user, (err1, res) => {
+                            if (err1 && err1[0]) {
+                              if (callback) {
+                                switch (err1[0].code) {
+                                  case 1062:
+                                    callback(new error(2, "users.wrong.login", err1[0]));
+                                    break;
+                                  default:
+                                    callback(error.serv(err1[0]));
+                                    break;
                                 }
-                              });
+                              }
+                            } else {
+                              that.createToken(res[0].insertId, -1, -1, callback);
                             }
                           });
                         }
                       });
-                    } else {
-                      callback(new error(3, "users.wrong.password"));
                     }
-                  } else {
-                    callback(new error(3, "users.wrong.password"));
-                  }
-
+                  });
                 } else {
-                  callback(new error(29, "users.wrong.sex"));
+                  callback(new error(32, "users.wrong.repeated.password"));
                 }
               } else {
-                callback(new error(28, "users.wrong.second.name"));
+                callback(new error(3, "users.wrong.password"));
               }
-            } else {
-              callback(new error(27, "users.wrong.second.name"));
             }
           } else {
             callback(new error(2, "users.wrong.login"));
@@ -555,100 +580,14 @@ let live_lib_userEngine = function (settings) {
       __func002(user_id, that, (err, res) => {
         if (err) callback(err);
         else {
-          if (res.country && res.city) {
-            that.db.select("countries", {where: "id = " + res.country}, (err0, res0) => {
-              if (err0) callback(error.serv(err0));
-              else {
-                that.db.select("cities", {where: "id = " + res.city}, (err1, res1) => {
-                  if (err1) callback(error.serv(err1));
-                  else
-                    callback(undefined, {
-                      id: res.id,
-                      login: res.login,
-                      firstName: res.firstName,
-                      lastName: res.lastName,
-                      secondName: res.secondName,
-                      sex: res.sex[0] ? "man" : "woman",
-                      bdate: res.bdate,
-                      mobile_phone: res.mobile_phone,
-                      home_phone: res.home_phone,
-                      site: res.site,
-                      status: res.status,
-                      verified: !!res.verified[0],
-                      closed: !!res.closed[0],
-                      screen_name: res.screen_name,
-                      country: res0,
-                      city: res1
-                    });
-                });
-              }
-            });
-          } else if (res.country) {
-            that.db.select("countries", {where: "id = " + res.country}, (err0, res0) => {
-              if (err0) callback(error.serv(err0));
-              else {
-                callback(undefined, {
-                  id: res.id,
-                  login: res.login,
-                  firstName: res.firstName,
-                  lastName: res.lastName,
-                  secondName: res.secondName,
-                  sex: res.sex[0] ? "man" : "woman",
-                  bdate: res.bdate,
-                  mobile_phone: res.mobile_phone,
-                  home_phone: res.home_phone,
-                  site: res.site,
-                  status: res.status,
-                  verified: !!res.verified[0],
-                  closed: !!res.closed[0],
-                  screen_name: res.screen_name,
-                  country: res0,
-                  balance: res.balance
-                });
-              }
-            });
-          } else if (res.city) {
-            that.db.select("cities", {where: "id = " + res.city}, (err1, res1) => {
-              if (err1) callback(error.serv(err1));
-              else
-                callback(undefined, {
-                  id: res.id,
-                  login: res.login,
-                  firstName: res.firstName,
-                  lastName: res.lastName,
-                  secondName: res.secondName,
-                  sex: res.sex[0] ? "man" : "woman",
-                  bdate: res.bdate,
-                  mobile_phone: res.mobile_phone,
-                  home_phone: res.home_phone,
-                  site: res.site,
-                  status: res.status,
-                  verified: !!res.verified[0],
-                  closed: !!res.closed[0],
-                  screen_name: res.screen_name,
-                  country: res0,
-                  city: res1,
-                  balance: res.balance
-                });
-            });
-          } else
-            callback(undefined, {
-              id: res.id,
-              login: res.login,
-              firstName: res.firstName,
-              lastName: res.lastName,
-              secondName: res.secondName,
-              sex: res.sex[0] ? "man" : "woman",
-              bdate: res.bdate,
-              mobile_phone: res.mobile_phone,
-              home_phone: res.home_phone,
-              site: res.site,
-              status: res.status,
-              verified: !!res.verified[0],
-              closed: !!res.closed[0],
-              screen_name: res.screen_name,
-              balance: res.balance
-            });
+          callback(undefined, {
+            id: res.id,
+            login: res.login,
+            status: res.status,
+            verified: !!res.verified[0],
+            closed: !!res.closed[0],
+            screen_name: res.screen_name,
+          });
         }
       });
     }
@@ -676,9 +615,7 @@ let live_lib_userEngine = function (settings) {
                     if ((res0.closed && res !== "friend") || res === "black") {
                       res0 = {
                         id: res0.id,
-                        firstName: res0.firstName,
-                        lastName: res0.lastName,
-                        secondName: res0.secondName,
+                        login: res0.login,
                         closed: res0.closed
                       };
                     } else res0.balance = undefined;
@@ -715,34 +652,17 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.accountEdit = function (input, token, callback) {
       this.createAction(token, "account.edit", "account", callback, (user, end, that) => {
-        if (!__func010(input.firstName, 2)) callback(new error(27, "users.wrong.first.name"));
-        else if (!__func010(input.secondName, 3)) callback(new error(28, "users.wrong.second.name"));
-        else if (input.sex && input.sex !== "man" && input.sex !== 'woman') callback(new error(29, "users.wrong.sex"));
-        else {
-
-          that.db.update("users",
-            {
-              firstName: input.firstName,
-              secondName: input.secondName,
-              lastName: input.lastName,
-              sex: input.sex === "man" ? 1 : 0,
-              screen_name: input.screen_name,
-              bdate: input.bdate,
-              closed: input.closed ? 1 : 0,
-              country: input.country,
-              city: input.city,
-              mobile_phone: input.mobile_phone,
-              home_phone: input.home_phone,
-              site: input.site,
-              status: input.status,
-              "$$where": "id = " + user.id
-            },
-            err => {
-              if (err) callback(error.serv(err));
-              else callback(undefined);
-              end(!err);
-            });
-        }
+        that.db.update("users",
+          {
+            closed: input.closed ? 1 : 0,
+            status: input.status,
+            "$$where": "id = " + user.id
+          },
+          err => {
+            if (err) callback(error.serv(err));
+            else callback(undefined);
+            end(!err);
+          });
       });
     };
 
@@ -1309,13 +1229,14 @@ let live_lib_userEngine = function (settings) {
       this.createAction(token, "photos.setTarget", "photos", callback, (user, end, that) => {
         switch (target) {
           case 1:
+          case "1":
             that.db.select("photos", {where: "id = " + photo_id}, (err, res) => {
               if (err) {
                 callback(error.serv(err));
                 end(false);
               } else {
-                if (user.id == res.owner) {
-                  if (res.status != 3) {
+                if (user.id == res[0].owner) {
+                  if (res[0].access[0] != 3) {
                     that.db.update("photos", {status: 3, "$$where": "id = " + photo_id}, (err0) => {
                       if (err0) {
                         callback(error.serv(err0));
