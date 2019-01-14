@@ -381,7 +381,7 @@ let live_lib_userEngine = function (settings) {
                         } else {
                           user.passwordSalt = salt;
                           user.password = hash;
-                          user.sex = user.sex.toLowerCase() === "man" ? 1 : 0;
+                          user.password2 = undefined;
                           this.db.insert("users", user, (err1, res) => {
                             if (err1 && err1[0]) {
                               if (callback) {
@@ -584,9 +584,9 @@ let live_lib_userEngine = function (settings) {
             id: res.id,
             login: res.login,
             status: res.status,
-            verified: !!res.verified[0],
             closed: !!res.closed[0],
-            screen_name: res.screen_name,
+            banned: !!res.banned[0],
+            deleted: !!res.deleted[0]
           });
         }
       });
