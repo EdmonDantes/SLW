@@ -5,19 +5,38 @@ html
         style
             include ../css/registerForm.css
         script(src="/api/js?file=rsa.js")
-        script(src="/api/js?file=base.js")
+        script(src="/api/js?file=api.js")
+        script(src="/api/js?file=view_api.js")
         script.
-          Base.reset(["login", "password", "password2"]);
-          Base.createSendFunction("/postjoin", {
+          reset(["login", "password", "password2"]);
+          createSendFunction("post/join", {
             login: {},
             password: {
               check: function (value, callback) {
-                Base.encrypt(value, callback);
+                Server.getPublicKey(function (err, res) {
+                  if (err) callback(err);
+                  else {
+                    try {
+                      callback(undefined, new document.NodeRSA(res.response, "pkcs1-public-pem").encrypt(value, "base64"));
+                    } catch (err) {
+                      callback(err);
+                    }
+                  }
+                });
               }
             },
             password2: {
               check: function (value, callback) {
-                Base.encrypt(value, callback);
+                Server.getPublicKey(function (err, res) {
+                  if (err) callback(err);
+                  else {
+                    try {
+                      callback(undefined, new document.NodeRSA(res.response, "pkcs1-public-pem").encrypt(value, "base64"));
+                    } catch (err) {
+                      callback(err);
+                    }
+                  }
+                });
               }
             }
           });

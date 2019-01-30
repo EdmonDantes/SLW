@@ -5,8 +5,10 @@ html
         style
             include ../css/userFrom.css
         script(src="/api/js?file=rsa.js")
-        script(src="/api/js?file=base.js")
+        script(src="/api/js?file=api.js")
+        script(src="/api/js?file=view_api.js")
         script.
+
           var id = #{id};
 
           function showAccount() {
@@ -30,7 +32,7 @@ html
           }
 
           function addFriend() {
-            Base.sendRequestToServer("friends.add", {id: #{id}}, function (err, res) {
+            Friends.add(#{id}, function (err, res) {
               if (err) alert(err.error.message);
               else {
                 document.getElementById("addFriend").hidden = true;
@@ -41,7 +43,7 @@ html
           }
 
           function addBlack() {
-            Base.sendRequestToServer("blacklist.add", {id: #{id}}, function (err, res) {
+            Blacklist.add(#{id}, function (err, res) {
               if (err) alert(err.error.message);
               else {
                 document.getElementById("addBlack").hidden = true;
@@ -52,7 +54,7 @@ html
           }
 
           function deleteBlack() {
-            Base.sendRequestToServer("blacklist.delete", {id: #{id}}, function (err, res) {
+            Blacklist.delete(#{id}, function (err, res) {
               if (err) alert(err.error.message);
               else {
                 document.getElementById("addBlack").hidden = false;
@@ -63,7 +65,7 @@ html
           }
 
           function deleteFriend() {
-            Base.sendRequestToServer("friends.delete", {id: #{id}}, function (err, res) {
+            Friends.delete(#{id}, function (err, res) {
               if (err) alert(err.error.message);
               else {
                 document.getElementById("addFriend").hidden = false;
@@ -72,13 +74,14 @@ html
               }
             });
           }
-          Base.sendRequestToServer("photos.getTarget", {id: id, target: 1}, function (err, res) {
+
+          Photos.getTargetId(id, 1, function (err, res) {
             if (err) console.log(err);
             else {
               let img = document.createElement("img");
               img.setAttribute("id", "image#{id}");
               img.setAttribute("class", "p");
-              img.src = new Base.url(Base.domain, "api/photos.get?id=" + res.response + "&type=p");
+              img.src = new Base.url(Base.domain, "api/photos/get?id=" + res.response + "&type=p");
               img.onerror = function () {
                 img.hidden = true;
               }

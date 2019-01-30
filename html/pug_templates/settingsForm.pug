@@ -4,10 +4,11 @@ html
         style
             include ../css/registerForm.css
         script(src="/api/js?file=rsa.js")
-        script(src="/api/js?file=base.js")
+        script(src="/api/js?file=api.js")
+        script(src="/api/js?file=view_api.js")
         script.
-          Base.reset(["status", "firstName", "secondName", "middleName", "man"], ["woman", "closed"]);
-          Base.createSendFunction("/api/account.edit", {
+          reset(["status", "firstName", "secondName", "middleName", "man"], ["woman", "closed"]);
+          createSendFunction("account/edit", {
             status: {},
             closed: {
               checked: true,
@@ -18,9 +19,9 @@ html
             photo: {
               get: function (value, callback) {
                 if (value && (value.files && value.files[0] || value.target && value.target.files && value.target.files[0]))
-                  Base.downloadImage(value.files ? value.files[0] : value.target.files[0], 3, function (err, res) {
+                  Photos.add(value.files ? value.files[0] : value.target.files[0], 3, function (err, res) {
                     if (err) callback(err);
-                    else Base.sendRequestToServer("photos.setTarget", {id: res.response, target: 1}, callback);
+                    else Photos.setTargetId(res.response, 1, callback);
                   });
                 else callback(undefined, undefined);
               }

@@ -302,12 +302,12 @@ let _live_lib_base = function () {
     //process.stdin.resume();
 
     process.on("SIGTERM", (...args) => {
-      ___prout("SIGTERM", args);
+      ___prout(" SIGTERM", args);
       process.exit(0);
     });
 
     process.on('SIGINT', () => {
-      ___prout("\nCTRL^C");
+      ___prout("\nLiveLib stop work\nCTRL^C");
       process.exit(0);
     });
 

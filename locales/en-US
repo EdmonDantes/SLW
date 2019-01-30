@@ -17,7 +17,7 @@ photo.wrong.format: Wrong format of photo
 photo.not.find: Photo wasn`t find
 request.have.not.token: This request have not token. Please login or register.
 method.is.not.have: This method is have not on server
-users.wrong.data: Wrong data for users.
+users.wrong.data: Wrong data.
 method.not.find: This method isn`t find
 api.wrong.arguments: Wrong arguments in request
 users.have.not.permissions: You dont have permissions for this action
@@ -30,6 +30,11 @@ users.wrong.sex: Sex isn`t find
 users.wrong.login.or.password: Wrong login or password
 messages.wrong.user: Wrong user adding to chat
 users.wrong.repeated.password: Repeat password right
+messages.you.not.admin: You are not administrator of this dialog
+messages.user.in.dialog: This user is already in this dialog
+messages.user.not.in.dialog: This user isn`t in dialog
+string.too.long: This string too long
+messages.user.already.have.this.peer: This user already have this peer
 
 code404: Page not found // Error code: 404
 

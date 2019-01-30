@@ -2,5 +2,5 @@ host: localhost
 user: root
 password: 1111qazwsxqweasd
 database: testApi
-photos folder: /tmp/photo
+photo_folder: ~/server_photos
 domain: http://localhost:8080

@@ -5,7 +5,8 @@ html
         style
             include ../css/userFrom.css
         script(src="/api/js?file=rsa.js")
-        script(src="/api/js?file=base.js")
+        script(src="/api/js?file=api.js")
+        script(src="/api/js?file=view_api.js")
         script.
 
           let friends = [#{friends}].sort();
@@ -13,7 +14,7 @@ html
           let inRequest = [#{inRequest}].sort();
 
           function addFriend(id, status) {
-            Base.sendRequestToServer("friends.add", {id: id}, function (err, res) {
+            Friends.add(id, function (err, res) {
               if (err) alert(err.error.message);
               else {
                 document.getElementById("list").removeChild(document.getElementById("list").querySelector("#element" + id));
@@ -28,7 +29,7 @@ html
           }
 
           function deleteFriend(id, status) {
-            Base.sendRequestToServer("friends.delete", {id: id}, function (err, res) {
+            Friends.delete(id, function (err, res) {
               if (err) alert(err.error.message);
               else {
                 document.getElementById("list").removeChild(document.getElementById("list").querySelector("#element" + id));
@@ -99,10 +100,10 @@ html
 
           function createPartList(id, status, func) {
             return new Promise(function (res, rej) {
-              Base.sendRequestToServer("account.get", {id: id}, function (err0, res0) {
+              Account.get(id, function (err0, res0) {
                 if (err0) rej(err0);
                 else {
-                  Base.sendRequestToServer("photos.getTarget", {id: id, target: 1}, function (err1, res1) {
+                  Photos.getTargetId(id, 1, function (err1, res1) {
                     if (err1) rej(err1);
                     else {
                       let object = document.createElement("div");

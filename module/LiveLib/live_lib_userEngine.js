@@ -23,7 +23,9 @@ let live_lib_userEngine = function (settings) {
       let db = this.db = new Database(host, user, password, port, database, count_pools);
       this.status = 0;
       this.addLoaded = function () {
-        if (this.status > 3) callback();
+        if (this.status > 3) {
+          if (callback) callback();
+        }
         else this.status++;
       };
       this.folder = path.resolve(folder);
@@ -68,7 +70,7 @@ let live_lib_userEngine = function (settings) {
         {name: "password", type: VARCHAR(60, true, "latin1"), notnull: true}, // Пароль в зашифрованном виде
         {name: "passwordSalt", type: VARCHAR(29, true, "latin1"), notnull: true}, // Соль пароля
         //TODO: create support in server.js {name: "screen_name", type: VARCHAR(120, true, "latin1"), notnull: true, default: "''"}, // Ссылка на профиль
-        {name: "status", type: VARCHAR(200, true, "utf8mb4"), notnull: true, default: "''"}, // Статус на станице
+        {name: "status", type: VARCHAR(500, true, "utf8mb4"), notnull: true, default: "''"}, // Статус на станице
         {name: "closed", type: BIT(1), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
         {name: "banned", type: BIT(1), notnull: true, default: "b'0'"}, // Забанена ли страница
         {name: "deleted", type: BIT(1), notnull: true, default: "b'0'"}, // Удалена ли страница
@@ -108,18 +110,24 @@ let live_lib_userEngine = function (settings) {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
+      /*
+       * Таблица токенов
+       */
       db.createTable("tokens",
         {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id токена
         {name: "token", type: VARCHAR(TOKEN_LENGTH, true, "latin1"), unique: true, notnull: true}, // Токен
         {name: "user_id", type: UINT(), foreign: {table: "users", key: "id"}, notnull: true}, //Id пользователя
         {name: "permissions", type: UINT(), notnull: true}, // Права токена
-        {name: "create_time", type: UINT(), notnull: true}, // Время создания токена
-        {name: "last_using", type: UINT(), notnull: true}, // Время последнего использования токена
-        {name: "time", type: UINT(), notnull: true}, // Время действия токена в секундах
+        {name: "create_time", type: UINT(), notnull: true}, // Время создания токена в секундах
+        {name: "last_using", type: UINT(), notnull: true}, // Время последнего использования токена в секундках
+        {name: "time", type: UINT(), notnull: true}, // Время действия токена в секундах (0 - неограниченное время действия)
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
+      /*
+       * Таблица отношений между пользователями
+       */
       db.createTable("relations",
         {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id отношений
         {name: "user_id_1", type: UINT(), notnull: true}, // Первый пользователь (Всегда должен быть меньше второго)
@@ -169,49 +177,62 @@ let live_lib_userEngine = function (settings) {
         });
 
       db.createTable("connections",
-        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true},
-        {name: "token_id", type: UINT(), unique: true, notnull: true, foreign: {table: "tokens", key: "id"}},
-        {name: "server_id", type: UTINYINT(), notnull: true, foreign: {table: "servers", key: "id"}},
+        {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id подключения
+        {name: "token_id", type: UINT(), unique: true, notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
+        {name: "server_id", type: UTINYINT(), notnull: true, foreign: {table: "servers", key: "id"}}, // Id сервера
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("peers",
-        {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true},
-        {name: "name", type: VARCHAR(120, true), notnull: true},
-        {name: "photo_id", type: BIGINT(), foreign: {table: "photos", key: "id"}},
-        {name: "create_date", type: UINT(), notnull: true},
+        {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true}, // Id чата
+        {name: "name", type: VARCHAR(120, true, "utf8mb4"), notnull: true}, // Название чата
+        {name: "photo_id", type: BIGINT(), foreign: {table: "photos", key: "id"}, default: "NULL"}, // Id фотографии (0 - нет фотографии)
+        {name: "create_date", type: UINT(), notnull: true}, // Время создания чата в секундах
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("messages",
-        {name: "id", type: BIGINT(), notnull: true, autoincrement: true, primary: true},
-        {name: "text", type: VARCHAR(1000, true), notnull: true},
-        {name: "date", type: UINT(), notnull: true},
+        {name: "id", type: BIGINT(), notnull: true, autoincrement: true, primary: true}, // Id сообщения
+        {name: "text", type: VARCHAR(1000, true, "utf8mb4"), notnull: true}, // Текст сообщения
+        {name: "date", type: UINT(), notnull: true}, // Время отправки сообщения
+        {name: "owner", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Отправитель сообщения
+        {name: "type", type: BIT(3), notnull: true, default: "b'000'"},
+        /*
+          0 - сообщение от пользователя
+          1 - создание беседы
+          2 - приглашение в беседу
+          3 - выход из беседы
+          4 - возвращение в беседу
+          5 - закрепление сообщения
+          6 - открепление сообщения
+         */
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("users_peers",
-        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
-        {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}, unique: ["user_id"]},
-        {name: "is_admin", type: BIT(1), notnull: true, default: "b'0'"},
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Id пользователя
+        {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}, unique: ["user_id"]}, // Id диалога
+        {name: "is_admin", type: BIT(1), notnull: true, default: "b'0'"}, // Является ли пользователем админом беседы
+        {name: "leaved", type: BIT(1), notnull: true, default: "b'0'"}, // Вышел ли пользователь из диалога
+        {name: "banned", type: BIT(1), notnull: true, default: "b'0'"}, // Был ли забанен пользователь
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("peers_messages",
-        {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}},
+        {name: "peer_id", type: BIGINT(), notnull: true, foreign: {table: "peers", key: "id"}}, // Id диалога
         {
           name: "message_id",
           type: BIGINT(),
           notnull: true,
           unique: ["peer_id"],
           foreign: {table: "messages", key: "id"}
-        },
-        {name: "message_chat_local_id", type: UINT(), notnull: true, unique: ["peer_id"]},
-        {name: "read", type: BIT(1), notnull: true, default: "b'0'"},
+        }, // Id сообщения
+        {name: "message_chat_local_id", type: UINT(), notnull: true, unique: ["peer_id"]}, // Id сообщения в диалоге
+        {name: "read", type: BIT(1), notnull: true, default: "b'0'"}, // Прочитано ли сообщение
         err => {
           if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
           else db.createRequest("CREATE TRIGGER `auto_increment_messages_chat_local_id` BEFORE INSERT ON `peers_messages` FOR EACH ROW SET NEW.message_chat_local_id = (SELECT COUNT(`peer_id`) + 1 FROM `peers_messages` WHERE `peer_id` = NEW.peer_id);", err => {
@@ -221,49 +242,48 @@ let live_lib_userEngine = function (settings) {
         });
 
       db.createTable("users_messages",
-        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Id пользователя
         {
           name: "message_id",
           type: BIGINT(),
           notnull: true,
           unique: ["user_id"],
           foreign: {table: "messages", key: "id"}
-        },
-        {name: "messages_user_local_id", type: UINT(), notnull: true},
-        {name: "data", type: BIT(2), notnull: true, default: "b'00'"},
-        // Первый бит отвечает за тип сообщения. 1 - исходящее, 0 - входящее
-        // Второй бит отвечает прочитано или нет. 1 - прочитано, 0 - нет
+        }, // Id сообщения
+        {name: "message_user_local_id", type: UINT(), notnull: true}, // Id сообщения у пользователя
+        {name: "type", type: BIT(1), notnull: true, default: "b'0'"}, // Тип сообщения. 1 - исходящее, 0 - входящее
+        {name: "read", type: BIT(1), notnull: true, default: "b'0'"}, // 1 - прочитано, 0 - нет
         // По умолчанию добавляем входящие непрочитанные сообщения
         err => {
           if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
-          else db.createRequest("CREATE TRIGGER `auto_increment_messages_user_local_id` BEFORE INSERT ON `users_messages` FOR EACH ROW SET NEW.messages_user_local_id = (SELECT COUNT(`user_id`) + 1 FROM `users_messages` WHERE `user_id` = NEW.user_id);", err => {
+          else db.createRequest("CREATE TRIGGER `auto_increment_message_user_local_id` BEFORE INSERT ON `users_messages` FOR EACH ROW SET NEW.message_user_local_id = (SELECT COUNT(`user_id`) + 1 FROM `users_messages` WHERE `user_id` = NEW.user_id);", err => {
             if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
             that.addLoaded();
           });
         });
 
       db.createTable("reply_messages",
-        {name: "message_id", type: BIGINT(), notnull: true, foreign: {table: "messages", key: "id"}},
+        {name: "message_id", type: BIGINT(), notnull: true, foreign: {table: "messages", key: "id"}}, // Id сообщения
         {
           name: "reply_id",
           type: BIGINT(),
           notnull: true,
           foreign: {table: "messages", key: "id"},
           unique: ["message_id"]
-        },
+        }, // Id пересылаемого сообщения
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
       db.createTable("messages_photo",
-        {name: "message_id", type: BIGINT(), notnull: true, foreign: {table: "messages", key: "id"}},
+        {name: "message_id", type: BIGINT(), notnull: true, foreign: {table: "messages", key: "id"}}, // Id сообщения
         {
           name: "photo_id",
           type: BIGINT(),
           notnull: true,
           foreign: {table: "photos", key: "id"},
           unique: ["message_id"]
-        },
+        }, // Id фотографии
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
           that.addLoaded();
@@ -315,8 +335,12 @@ let live_lib_userEngine = function (settings) {
       "messages.createChat",
       "messages.addUserToChat",
       "messages.deleteUserFromChat",
+      "messages.leaveFromChat",
+      "messages.addToChat",
       "messages.getAllChats",
       "messages.getChatById",
+      "messages.getById",
+      "messages.getByPeerMessageId",
       "messages.markAsRead",
       "messages.sendMessage"
     ];
@@ -345,8 +369,8 @@ let live_lib_userEngine = function (settings) {
         token: token,
         user_id: user_id,
         permissions: permissions > -1 ? permissions : users.ALL_PERM,
-        create_time: Date.now() / 1000,
-        last_using: Date.now() / 1000,
+        create_time: Math.floor(Date.now() / 1000),
+        last_using: Math.floor(Date.now() / 1000),
         time: time > 0 ? time : 0
       }, (err) => {
         if (err) {
@@ -457,7 +481,7 @@ let live_lib_userEngine = function (settings) {
       that.db.select("tokens", {where: "token = '" + token + "'"}, (err, res) => {
         if (err) callback(error.serv(err));
         else if (res && res.length > 0 && res[0]) {
-          if (res[0].time < 1 || ((res[0].last_using + res[0].time) > (Date.now() / 1000))) {
+          if (res[0].time < 1 || ((res[0].last_using + res[0].time) > Math.floor((Date.now() / 1000)))) {
             callback(undefined, res[0]);
           } else callback(new error(4, "users.token.old"));
         } else callback(new error(9, "users.wrong.token"));
@@ -490,7 +514,7 @@ let live_lib_userEngine = function (settings) {
                     that.db.insert("actions", {
                       token_id: res.id,
                       type_action: getActionId(action_str),
-                      time: time ? time : Date.now() / 1000,
+                      time: time ? time : Math.floor(Date.now() / 1000),
                       success: !!result
                     }, err => {
                       if (err && handler) handler(error.serv(err));
@@ -504,7 +528,7 @@ let live_lib_userEngine = function (settings) {
                     end(false);
                   }
                   that.db.update("tokens", {
-                    last_using: Date.now() / 1000,
+                    last_using: Math.floor(Date.now() / 1000),
                     "$$where": "token = '" + token + "'"
                   }, err1 => {
                     if (handler) {
@@ -520,16 +544,29 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
+    function __isNumber(number) {
+      try {
+        let _number = parseInt(number);
+        return ((typeof _number == "number") || (_number instanceof Number)) && !isNaN(_number);
+      } catch (err) {
+        return false;
+      }
+    }
+
     function __func000(user_id_1, user_id_2, that, callback) { // get status from db
-      if (user_id_1 == user_id_2) {
-        callback(new error(10, "users.can.not.status.self"));
-      } else
-        that.db.select("relations", {where: "user_id_1 = " + Math.min(user_id_1, user_id_2) + " AND user_id_2 = " + Math.max(user_id_1, user_id_2)}, (err, res) => {
-          if (err) callback(err);
-          else {
-            callback(undefined, res && res.length > 0 ? res[0].status[0] : undefined);
-          }
-        });
+      if (__isNumber(user_id_1) && __isNumber(user_id_2)) {
+        if (user_id_1 == user_id_2) {
+          callback(new error(10, "users.can.not.status.self"));
+        } else
+          that.db.select("relations", {where: "user_id_1 = " + Math.min(user_id_1, user_id_2) + " AND user_id_2 = " + Math.max(user_id_1, user_id_2)}, (err, res) => {
+            if (err) callback(error.serv(err));
+            else {
+              callback(undefined, res && res.length > 0 ? res[0].status[0] : undefined);
+            }
+          });
+      } else {
+        callback(new error(20, "users.wrong.data"));
+      }
     }
 
     function __func001(user_id_1, user_id_2, that, callback) { // get string status from db
@@ -562,18 +599,22 @@ let live_lib_userEngine = function (settings) {
     }
 
     function __func002(user_id, that, callback) { //get user`s info from db
-      that.db.select("users", {where: "id = " + user_id}, (err, res) => {
-        if (err) callback(error.serv(err));
-        else if (res && res.length > 0 && res[0]) {
-          if (res[0].deleted[0]) {
-            callback(new error(7, "users.deleted"));
-          } else if (res[0].banned[0]) {
-            callback(new error(6, "users.banned"));
-          } else {
-            callback(undefined, res[0]);
-          }
-        } else callback(new error(8, "users.not.find"));
-      });
+      if (__isNumber(user_id)) {
+        that.db.select("users", {where: "id = " + user_id}, (err, res) => {
+          if (err) callback(error.serv(err));
+          else if (res && res.length > 0 && res[0]) {
+            if (res[0].deleted[0]) {
+              callback(new error(7, "users.deleted"));
+            } else if (res[0].banned[0]) {
+              callback(new error(6, "users.banned"));
+            } else {
+              callback(undefined, res[0]);
+            }
+          } else callback(new error(8, "users.not.find"));
+        });
+      } else {
+        callback(new error(20, "users.wrong.data"));
+      }
     }
 
     function __func003(user_id, that, callback) { // get normalize user from db
@@ -780,7 +821,7 @@ let live_lib_userEngine = function (settings) {
                     "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
                   }, err => {
                     if (err) callback(error.serv(err));
-                    else callback(undefined);
+                    else callback();
                     func(!err);
                   });
                 } else if (res === 3 || res === (user.id < user_id ? 4 : 5)) {
@@ -789,7 +830,7 @@ let live_lib_userEngine = function (settings) {
                     "$$where": "user_id_1 = " + Math.min(user_id, user.id) + " AND " + "user_id_2 = " + Math.max(user_id, user.id)
                   }, err => {
                     if (err) callback(error.serv(err));
-                    else callback(undefined);
+                    else callback();
                     func(!err);
                   });
                 } else if (res === (user_id < user.id ? 4 : 5) || res === 6) {
@@ -802,6 +843,7 @@ let live_lib_userEngine = function (settings) {
                   status: user_id < user.id ? 2 : 1
                 }, err => {
                   if (err) callback(error.serv(err));
+                  else callback();
                   func(!err);
                 });
               }
@@ -1172,8 +1214,13 @@ let live_lib_userEngine = function (settings) {
     }
 
     users.prototype.getPhoto = function (photo_name, key) {
-      if (key === this.key) return fs.createReadStream(path.join(this.photoFolder, photo_name));
-      else return false;
+      if (key === this.key) {
+        try {
+          return fs.createReadStream(path.join(this.photoFolder, photo_name));
+        } catch (_err) {
+        }
+      }
+      return false;
     };
 
     users.prototype.photosGet = function (photo_id, type, token, callback) {
@@ -1201,7 +1248,11 @@ let live_lib_userEngine = function (settings) {
                 if (err) callback(err);
                 else if (res) {
                   if (res.server == that.id) {
-                    callback(undefined, fs.createReadStream(path.join(that.photoFolder, res.id + "_" + type)));
+                    let file = path.join(that.photoFolder, res.id + "_" + type);
+                    if (fs.existsSync(file)) {
+                      callback(undefined, fs.createReadStream(file));
+                    } else
+                      callback(undefined, fs.createReadStream(path.join(that.folder, "images", "0.jpeg")));
                     end(true);
                   } else {
                     that.db.select("servers", {where: "id = " + res.server}, (err0, res0) => {
@@ -1223,7 +1274,6 @@ let live_lib_userEngine = function (settings) {
         }
       });
     };
-
 
     users.prototype.photosSetTarget = function (photo_id, target, token, callback) {
       this.createAction(token, "photos.setTarget", "photos", callback, (user, end, that) => {
@@ -1300,6 +1350,170 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
+    function __func012(user_id, peer_id, that, callback) { // Get object `users_peers` in database
+      that.db.select("users_peers", {where: "user_id = " + user_id + " AND peer_id = " + peer_id}, (err, res) => {
+        if (err) callback(error.serv(err));
+        else {
+          callback(undefined, res ? res[0] : res);
+        }
+      });
+    }
+
+    function __func013(name, photo_id, that, callback) { // Create object `peers` in database
+      if (name) {
+        that.db.insert("peers", {
+          name: name,
+          photo_id: photo_id,
+          create_date: Math.floor(Date.now() / 1000)
+        }, (err, res) => {
+          if (err) {
+            if (err.code == 1406) callback(new error(36, "string.too.long"));
+            else callback(error.serv(err));
+          } else
+            callback(undefined, res[0].insertId);
+        });
+      } else callback(new error(20, "users.wrong.data"));
+    }
+
+    function __func014(text, owner, type, that, callback) { // Create object `messages` in database
+      if (text && owner) {
+        that.db.insert("messages", {
+          text: text,
+          date: Math.floor(Date.now() / 1000),
+          owner: owner,
+          type: type
+        }, (err, res) => {
+          if (err) {
+            if (err.code == 1406) callback(new error(36, "string.too.long"));
+            else callback(error.serv(err));
+          } else callback(undefined, res[0].insertId);
+        });
+      } else callback(new error(20, "users.wrong.data"));
+    }
+
+    function __func015(user_id, peer_id, is_admin = false, that, callback) { // Adding peer to users peers in database
+      if (user_id && peer_id) {
+        that.db.insert("users_peers", {user_id: user_id, peer_id: peer_id, is_admin: !!is_admin}, (err) => {
+          if (err) {
+            if (err.code == 1062) callback(new error(37, "messages.user.already.have.this.peer"));
+            else callback(error.serv(err));
+          } else callback();
+        });
+      } else callback(new error(20, "users.wrong.data"));
+    }
+
+    function __func016(peer_id, message_id, that, callback) { // Send message to peers (peers_messages)
+      if (peer_id && message_id) {
+        that.db.insert("peers_messages", {peer_id: peer_id, message_id: message_id}, (err) => {
+          if (err) callback(error.serv(err));
+          else callback();
+        });
+      } else callback(new error(20, "users.wrong.data"));
+    }
+
+    function __func017(user_id, message_id, type = 0, that, callback) { // Send message to user (users_messages)
+      if (user_id && message_id) {
+        that.db.insert("users_messages", {user_id: user_id, message_id: message_id, type: type}, (err) => {
+          if (err) callback(error.serv(err));
+          else callback();
+        });
+      } else callback(new error(20, "users.wrong.data"));
+    }
+
+    function __func018(peer_id, message_id, owner, that, callback) { // Send message to all in peer
+      if (peer_id && message_id && owner) {
+        __func016(peer_id, message_id, that, (err) => {
+          if (err) callback(err);
+          else that.db.select("users_peers", {where: ["peer_id = ", peer_id, " AND `leaved` = b'0' AND `banned` = b'0'"]}, (err0, res0) => {
+            if (err0) callback(error.serv(err0));
+            else {
+              let promises = [];
+              for (let obj of res0) {
+                promises.push(new Promise((res, rej) => {
+                  if (obj.user_id != owner) {
+                    __func017(obj.user_id, message_id, 0, that, (err) => {
+                      if (err) rej(err);
+                      else res();
+                    });
+                  } else {
+                    __func017(obj.user_id, message_id, 1, that, (err) => {
+                      if (err) rej(err);
+                      else res();
+                    });
+                  }
+                }));
+              }
+              Promise.all(promises).then(res => callback(), callback);
+            }
+          });
+        });
+      } else callback(new error(20, "users.wrong.data"));
+    }
+
+    function __func019(message_id, that, callback, reply = 0) { // Get message
+      if (reply > 50) callback();
+      that.db.select("messages", {where: ["`id` = '", message_id, "'"]}, (err, res) => {
+        if (err) callback(error.serv(err));
+        else {
+          that.db.select("peers_messages", {where: ["`message_id` = '", res[0].id, "'"]}, (err0, res0) => {
+            if (err0) callback(error.serv(err0));
+            else {
+              that.db.select("reply_messages", {where: ["`message_id` = '", res[0].id, "'"]}, (err1, res1) => {
+                if (err1) callback(error.serv(err1));
+                else {
+                  that.db.select("messages_photo", {
+                    filters: "`photo_id`",
+                    where: ["`message_id` = '", res[0].id, "'"]
+                  }, (err2, res2) => {
+                    if (err2) callback(error.serv(err2));
+                    else {
+                      let photosIds = [];
+                      for (let obj of res2) {
+                        photosIds.push(obj.photo_id);
+                      }
+                      photosIds.sort((a, b) => {
+                        return a - b;
+                      });
+                      let promises = [];
+                      let reply_messages = [];
+                      for (let obj of res1) {
+                        promises.push(new Promise((res3, rej3) => {
+                          __func019(obj.reply_id, that, (err4, res4) => {
+                            if (err4) rej3(err4);
+                            else {
+                              if (res4) reply_messages.push(res4);
+                              res3();
+                            }
+                          }, reply + 1);
+                        }));
+                      }
+                      Promise.all(promises).then(res3 => {
+                        reply_messages.sort((a, b) => {
+                          return a.date - b.date;
+                        });
+
+                        callback(undefined, {
+                          text: res[0].text,
+                          date: res[0].date,
+                          owner: res[0].owner,
+                          type: res[0].type ? res[0].type[0] : undefined,
+                          peerId: res0[0].peer_id,
+                          chatMessageId: res0[0].message_chat_local_id,
+                          readInChat: res0[0].read ? res0[0].read[0] : undefined,
+                          replyMessages: reply_messages,
+                          photosIds: photosIds
+                        });
+                      }, callback);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+
     users.prototype.messagesCreateChat = function (name, users_ids, token, callback) {
       this.createAction(token, "messages.createChat", "messages", callback, (user, end, that) => {
         let all = true;
@@ -1316,29 +1530,49 @@ let live_lib_userEngine = function (settings) {
           }));
         }
         Promise.all(promises).then(res => {
-          if (!all) callback(new error(31, "messages.wrong.user"));
+          if (!all) {
+            callback(new error(31, "messages.wrong.user"));
+            end(all);
+          }
           else {
-            that.db.insert("peers", {name: name, date: Date.now() / 1000}, (err0, res0) => {
-              if (err0) callback(error.serv(err0));
+            __func013(name, null, that, (err0, res0) => {
+              if (err0) {
+                callback(err0);
+                end(!err0);
+              }
               else {
                 let promises0 = [];
                 promises0.push(new Promise((res, rej) => {
-                  that.db.insert("users_peers", {user_id: user.id, peer_id: res0.insertId, is_admin: 1}, err1 => {
-                    if (err1) rej(error.serv(err1));
+                  __func015(user.id, res0, true, that, (err1) => {
+                    if (err1) rej(err1);
                     else res();
                   });
                 }));
                 for (let obj of users_ids) {
                   promises0.push(new Promise((res, rej) => {
-                    that.db.insert("users_peers", {user_id: obj, peer_id: res0.insertId, is_admin: 0}, err1 => {
+                    that.db.insert("users_peers", {user_id: obj, peer_id: res0, is_admin: false}, err1 => {
                       if (err1) rej(error.serv(err1));
-                      else res();
+                      else
+                        res();
                     });
                   }));
                 }
                 Promise.all(promises0).then(res => {
-                  callback()
-                }, callback);
+                  __func014(name, user.id, 1, that, (err1, res1) => {
+                    if (err1) {
+                      callback(err1);
+                      end(false);
+                    } else
+                      __func018(res0, res1, user.id, that, (err2) => {
+                        if (err2) callback(err2);
+                        else callback(undefined, res1);
+                        end(!err2);
+                      });
+                  });
+                }, (err) => {
+                  end(!err);
+                  callback(err);
+                });
               }
             });
           }
@@ -1346,7 +1580,353 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
-    //user.prototype.messagesAddUserToChat = function(peer_id, user_id, token, callback){}
+    users.prototype.messagesAddUserToChat = function (user_id, peer_id, is_admin, token, callback) {
+      this.createAction(token, "messages.addUserToChar", "messages", callback, (user, end, that) => {
+        __func012(user.id, peer_id, that, (err0, res0) => {
+          if (err0) {
+            callback(err0);
+            end(false);
+          } else if (!res0) {
+            callback(new error(23, "users.have.not.permissions"));
+            end(false);
+          } else if (!res0.is_admin[0]) {
+            callback(new error(33, "messages.you.not.admin"));
+            end(false);
+          } else {
+            __func000(user.id, user_id, that, (err1, res1) => {
+              if (err1) {
+                callback(err1);
+                end(false);
+              }
+              if (res1 > 0) {
+                callback(new error(31, "messages.wrong.user"));
+                end(false);
+              } else {
+                __func012(user_id, peer_id, that, (err2, res2) => {
+                  if (err2) {
+                    callback(err2);
+                    end(false);
+                  } else if (!res2) {
+                    __func015(user_id, peer_id, false, that, (err3) => {
+                      if (err3) {
+                        callback(err3);
+                        end(false);
+                      } else {
+                        __func014(user_id, user.id, 2, that, (err4, res4) => {
+                          if (err4) {
+                            callback(err4);
+                            end(false);
+                          } else {
+                            __func018(peer_id, res4.insertId, user.id, that, callback);
+                          }
+                        });
+                      }
+                    });
+                  } else if (!res2.leaved[0]) {
+                    if (!res2.banned[0]) {
+                      callback(new error(34, "messages.user.in.dialog"));
+                      end(false);
+                    } else {
+                      that.db.update("users_peers", {
+                        "$$where": ["user_id = ", user_id, " AND peer_id = ", peer_id],
+                        banned: false
+                      }, (err3) => {
+                        if (err3) callback(error.serv(err3));
+                        else callback(undefined);
+                        end(!err3);
+                      });
+                    }
+                  } else {
+                    callback(new error(23, "users.have.not.permissions"));
+                    end(false);
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+    };
+
+    users.prototype.messagesDeleteUserFromChat = function (user_id, peer_id, token, callback) {
+      this.createAction(token, "messages.deleteUserFromChat", "messages", callback, (user, end, that) => {
+        if (user.id == user_id) callback(new error(10, "users.can.not.status.self"));
+        else __func012(user.id, peer_id, that, (err0, res0) => {
+          if (err0) {
+            callback(err0);
+            end(false);
+          } else if (!res0) {
+            callback(new error(23, "users.have.not.permissions"));
+            end(false);
+          } else if (!res0.is_admin[0]) {
+            callback(new error(33, "messages.you.not.admin"));
+            end(false);
+          } else {
+            __func012(user_id, peer_id, that, (err1, res1) => {
+              if (err1) {
+                callback(err1);
+                end(false);
+              } else if (!res1) {
+                callback(new error(35, "messages.user.not.in.dialog"));
+                end(false);
+              } else {
+                that.db.update("users_peers", {
+                  "$$where": ["user_id = ", user_id, " AND peer_id = ", peer_id],
+                  banned: true
+                }, (err2) => {
+                  if (err2) callback(error.serv(err2));
+                  else callback(undefined);
+                  end(!err2);
+                });
+              }
+            });
+          }
+        })
+      });
+    };
+
+    users.prototype.messagesLeaveFromChat = function (peer_id, token, callback) {
+      this.createAction(token, "messages.leaveFromChat", "messages", callback, (user, end, that) => {
+        that.db.update({"$$where": ["user_id = ", user.id, " AND peer_id = ", peer_id], leaved: true}, (err0) => {
+          if (err0) callback(err0);
+          else callback(undefined);
+          end(!err0);
+        });
+      });
+    };
+
+    users.prototype.messagesAddToChat = function (peer_id, token, callback) {
+      this.createAction(token, "messages.addToChat", "messages", callback, (user, end, that) => {
+        __func012(user.id, peer_id, that, (err0, res0) => {
+          if (err0) {
+            callback(err0);
+            end(false);
+          } else if (!res0 || (res0 && res0.banned[0])) {
+            callback(new error(23, "users.have.not.permissions"));
+            end(false);
+          } else if (!res0.leaved[0]) {
+            callback(new error(34, "messages.user.in.dialog"));
+            end(false);
+          } else {
+            that.db.update("users_peers", {
+              "$$where": ["user_id = ", user.id, " AND peer_id = ", peer_id],
+              leaved: false
+            }, (err1) => {
+              if (err1) callback(err1);
+              else callback(undefined);
+              end(!err1);
+            });
+          }
+        });
+      });
+    };
+
+    users.prototype.messagesGetAllChats = function (offset = 0, count = 20, token, callback) {
+      this.createAction(token, "messages.getAllChats", "messages", callback, (user, end, that) => {
+
+        //select c.peer_id, d.* from (select a.peer_id, max(b.message_id) as max_id from (select * from users_peers where user_id = 1) a left join (select * from peers_messages) b on a.peer_id = b.peer_id group by a.peer_id) c left join (select * from messages) d on c.max_id = d.id ORDER by -date asc, peer_id desc;
+
+        that.db.createRequest("SELECT `peer_id` FROM (SELECT `peer_id`, MAX(`c`.`message_id`) AS `max_id` FROM `peers_messages` JOIN (SELECT * FROM `users_messages` WHERE `user_id` = '" + user.id + "') `c` ON `peers_messages`.`message_id` = `c`.`message_id` GROUP BY `peer_id`) `a` JOIN (SELECT * FROM `messages`) `b` ON `a`.`max_id` = `b`.`id` ORDER BY `date` DESC LIMIT " + offset + "," + count,
+          (err, res) => {
+            if (err) callback(error.serv(err));
+            else callback(undefined, res);
+            end(!err);
+          });
+      });
+    };
+
+    users.prototype.messagesGetChatById = function (peer_id, token, callback) {
+      this.createAction(token, "messages.getChatById", "messages", callback, (user, end, that) => {
+        __func012(user.id, peer_id, that, (err, res) => {
+          if (err) {
+            callback(err);
+            end(false);
+          } else if (res && res.peer_id) {
+            that.db.select("peers", {where: ["id = '", res.peer_id, "'"]}, (err0, res0) => {
+              if (err0) {
+                callback(error.serv(err0));
+                end(false);
+              } else {
+                that.db.createRequest("SELECT MAX(`message_chat_local_id`) AS `maxChatId`, MAX(`message_user_local_id`) AS `maxUserId`, MIN(`message_user_local_id`) AS `minUserId` FROM (SELECT * FROM `peers_messages` WHERE `peer_id` = '" + res.peer_id + "') `a` JOIN (SELECT * FROM `users_messages` WHERE `user_id` = '" + user.id + "') `b` USING(`message_id`);", (err1, res1) => {
+                  if (err1) {
+                    callback(error.serv(err1));
+                    end(false);
+                  } else {
+                    that.db.select("users_peers", {where: ["`peer_id` ='", res.peer_id, "'"]}, (err2, res2) => {
+                      if (err2) {
+                        callback(error.serv(err2));
+                        end(false);
+                      } else {
+                        let shortInformation = false;
+                        let isAdmin = false;
+                        let members = [];
+                        let banned = [];
+                        for (let obj of res2) {
+                          if (obj.user_id == user.id) {
+                            if (obj.leaved[0] || obj.banned[0]) shortInformation = true;
+                            if (obj.is_admin[0]) isAdmin = true;
+                          } else if (!obj.leaved[0] && !obj.banned[0]) members.push(obj.user_id);
+                          else if (obj.banned[0]) banned.push(obj.user_id);
+                        }
+                        let obj = {
+                          id: res.peer_id,
+                          name: res0[0].name,
+                          photoId: res0[0].photo_id,
+                          createDate: res0[0].create_date,
+                          firstUserMessageId: res1[0].minUserId,
+                          lastUserMessageId: res1[0].maxUserId,
+                          haveAdmin: isAdmin,
+                        };
+
+                        if (!shortInformation) {
+                          obj.lastChatMessageId = res1[0].maxChatId;
+                          obj.membersIds = members;
+                          if (isAdmin) {
+                            obj.bannedIds = banned;
+                          }
+                        }
+
+                        callback(undefined, obj);
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          } else {
+            callback(new error(23, "users.have.not.permissions"));
+            end(false);
+          }
+        });
+      });
+    };
+
+    users.prototype.messagesGetById = function (users_message_id, token, callback) {
+      this.createAction(token, "messages.getById", "messages", callback, (user, end, that) => {
+        that.db.select("users_messages", {where: ["`user_id` = '", user.id, "' AND `message_user_local_id` = '", users_message_id, "'"]}, (err, res) => {
+          if (err) {
+            callback(error.serv(err));
+            end(false);
+          } else {
+            __func019(res[0].message_id, that, (err0, res0) => {
+              if (err0)
+                callback(err0);
+              else {
+                res0.readInChat = !!res0.readInChat;
+                res0.userMessageId = users_message_id;
+                res0.incoming = !res[0].type[0];
+                res0.read = res[0].read && res[0].type[0] != 1 ? !!res[0].read[0] : undefined;
+                callback(undefined, res0);
+              }
+              end(!err0);
+            });
+          }
+        });
+      });
+    };
+
+    users.prototype.messagesGetByPeerMessageId = function (peer_id, peer_message_id, token, callback) {
+      this.createAction(token, "messages.getByPeerMessageId", "messages", callback, (user, end, that) => {
+        that.db.select("peers_messages", {where: ["`peer_id` = '", peer_id, "' AND `message_chat_local_id` = '", peer_message_id, "'"]}, (err, res) => {
+          if (err) {
+            callback(error.serv(err));
+            end(false);
+          } else {
+            __func019(res[0].message_id, that, (err0, res0) => {
+              if (err0) {
+                callback(err0);
+                end(false);
+              } else {
+                that.db.select("users_messages", {where: ["`user_id` = '", user.id, "' AND `message_id` = '", res[0].message_id, "'"]}, (err1, res1) => {
+                  if (err1) callback(error.serv(err1));
+                  else {
+                    res0.userMessageId = res1[0].message_user_local_id;
+                    res0.read = res1[0].read ? res1[0].read[0] : undefined;
+                    callback(undefined, res0);
+                  }
+                  end(!err1);
+                });
+              }
+            });
+          }
+        });
+      });
+    };
+
+    users.prototype.messagesSendMessage = function (peer_id, text, reply_ids, photo_ids, token, callback) {
+      this.createAction(token, "messages.sendMessage", "messages", callback, (user, end, that) => {
+        __func014(text, user.id, 0, that, (err, res) => {
+          if (err) {
+            callback(err);
+            end(false);
+          } else {
+            let promises = [];
+            for (let obj of reply_ids) {
+              promises.push(new Promise((res0, rej0) => {
+                that.db.select("users_messages", {where: ["`user_id` = '", user.id, "' AND `message_user_local_id` = '", obj, "'"]}, (err1, res1) => {
+                  if (err1 || !res1 || (res1 && res1.length < 1)) rej0(error.serv(err1));
+                  else {
+                    that.db.insert("reply_messages", {message_id: res, reply_id: res1[0].message_id}, (err2, res2) => {
+                      if (err2) rej0(error.serv(err2));
+                      else res0();
+                    });
+                  }
+                });
+              }));
+            }
+            for (let obj of photo_ids) {
+              promises.push(new Promise((res0, rej0) => {
+                that.db.insert("messages_photo", {message_id: res, photo_id: obj}, (err1) => {
+                  if (err1) rej0(error.serv(err1));
+                  else res0();
+                });
+              }));
+            }
+
+            Promise.all(promises).then(res0 => {
+              __func018(peer_id, res, user.id, that, (err1, res1) => {
+                if (err1) callback(err1);
+                else callback();
+                end(!err1);
+              }, err0 => {
+                callback(err0);
+                end(false);
+              });
+            });
+          }
+        });
+      });
+    };
+
+    users.prototype.messagesMarkAsRead = function (users_message_id, token, callback) {
+      this.createAction(token, "messages.markAsRead", "messages", callback, (user, end, that) => {
+        that.db.select("users_messages", {where: ["`message_user_local_id` = '", users_message_id, "' AND `user_id` = '", user.id, "'"]}, (err0, res0) => {
+          if (err0) {
+            callback(error.serv(err0));
+            end(false);
+          } else if (res0[0].type[0] != 1) {
+            that.db.update("users_messages", {
+              read: 1,
+              "$$where": ["`message_id` = '", res0[0].message_id, "' AND (`user_id` = '", user.id, "' OR `type` = '1')"]
+            }, (err1) => {
+              if (err1) {
+                callback(error.serv(err1));
+                end(false);
+              } else {
+                that.db.update("peers_messages", {
+                  read: 1,
+                  "$$where": ["`message_id` = '", res0[0].message_id, "'"]
+                }, (err2) => {
+                  if (err2) callback(error.serv(err2));
+                  else callback();
+                  end(!err2);
+                });
+              }
+            });
+          } else callback();
+        });
+      });
+    };
 
     return global.LiveLib.userEngine;
   } catch (err) {

@@ -6,11 +6,7 @@
     "title": "Test Project",
     "termsOfService": "http://swagger.io/terms/",
     "contact": {
-      "email": "apiteam@swagger.io"
-    },
-    "license": {
-      "name": "Apache 2.0",
-      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+      "email": "dantes2104@gmail.com"
     }
   },
   "host": "80.211.26.238:8080",
@@ -35,6 +31,10 @@
     {
       "name": "photos",
       "description": "Operations with user`s photo"
+    },
+    {
+      "name": "messages",
+      "description": "Operations with user`s messages"
     }
   ],
   "schemes": [
@@ -168,10 +168,139 @@
           }
         }
       ]
+    },
+    "Peer": {
+      "type": "object",
+      "description": "Object of peer",
+      "properties": {
+        "id": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Peer`s id"
+        },
+        "name": {
+          "type": "string",
+          "description": "Peer`s name"
+        },
+        "photoId": {
+          "type": "number",
+          "description": "Peer`s photo id"
+        },
+        "createDate": {
+          "type": "number",
+          "description": "Date in seconds"
+        },
+        "firstUserMessagesId": {
+          "type": "number",
+          "description": "First message`s id for user`s messages in this peer (user`s message`s id)",
+          "minimum": 0
+        },
+        "lastUserMessageId": {
+          "type": "number",
+          "description": "Last message`s id for user`s messages in this peer (user`s message`s id)"
+        },
+        "lastChatMessageId": {
+          "type": "number",
+          "description": "Last message`s id for peer`s message in this peer (peer`s message`s id)"
+        },
+        "haveAdmin": {
+          "type": "boolean",
+          "description": "It is true if you are admin"
+        },
+        "membersIds": {
+          "type": "array",
+          "description": "Users` id who can send and read messages",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "bannedIds": {
+          "type": "array",
+          "description": "Users` id who banned (Only for admins)",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "Message": {
+      "type": "object",
+      "description": "Object of message",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Message`s text"
+        },
+        "date": {
+          "type": "number",
+          "description": "Sending date in seconds"
+        },
+        "owner": {
+          "type": "number",
+          "description": "Owner of this message"
+        },
+        "type": {
+          "type": "number",
+          "description": "Type of this message\n0 - Message from user\n1 - Message about creating chat\n2 - Message about invite to chat\n3 - Message about leavin chat\n4 - Message about return to chat\n5 - Catch message\n6 - Uncatch message",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ]
+        },
+        "peerId": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Peer`s id when message was send"
+        },
+        "chatMessageId": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Chat`s message`s id"
+        },
+        "readInChat": {
+          "type": "boolean",
+          "description": "True if message read in chat"
+        },
+        "replyMessage": {
+          "type": "array",
+          "description": "Reples messages",
+          "items": {
+            "$ref": "#/definitions/Message"
+          }
+        },
+        "photosIds": {
+          "type": "array",
+          "description": "Message`s photos` ids",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          }
+        },
+        "userMessageId": {
+          "type": "number",
+          "minimum": 1,
+          "description": "User`s message`s id"
+        },
+        "incoming": {
+          "type": "boolean",
+          "description": "True if this messages is incoming"
+        },
+        "read": {
+          "type": "boolean",
+          "description": "True if you did read this message (Only for incoming messages)"
+        }
+      }
     }
   },
   "paths": {
-    "/server.getPublicKey": {
+    "/server/getPublicKey": {
       "get": {
         "tags": [
           "server"
@@ -204,82 +333,27 @@
         }
       }
     },
-    "/account.login": {
+    "/account{id}": {
       "get": {
         "tags": [
           "account"
         ],
-        "summary": "Login user and get token with all permissions",
+        "summary": "Get information about user.",
         "parameters": [
           {
-            "name": "login",
-            "in": "query",
-            "description": "User`s login",
+            "in": "path",
+            "name": "id",
             "required": true,
-            "type": "string"
+            "type": "integer",
+            "minimum": 1,
+            "description": "User`s id. If id < 1 return youself"
           },
-          {
-            "name": "password",
-            "in": "query",
-            "description": "User's password encoded with server's public RSA key. You can encode this with file /js/rsa.js",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "remember",
-            "in": "query",
-            "description": "If true, return unlimit token",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "Return data from server",
-            "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/ApiResponse"
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "response": {
-                      "description": "User`s token",
-                      "type": "string",
-                      "default": "token"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    "/account.get": {
-      "get": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Get information about this user.",
-        "parameters": [
           {
             "name": "token",
             "in": "query",
             "type": "string",
             "description": "User`s token",
             "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "integer",
-            "description": "User`s id. If id < 1 return youself",
-            "default": -1
           }
         ],
         "produces": [
@@ -295,65 +369,7 @@
         }
       }
     },
-    "/account.statusWith": {
-      "get": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Get status with two accounts",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "query",
-            "type": "string",
-            "description": "User`s token",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "integer",
-            "description": "User`s id",
-            "required": true
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "Return data from server",
-            "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/ApiResponse"
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "response": {
-                      "type": "string",
-                      "description": "Status",
-                      "enum": [
-                        "friends",
-                        "sendRequest",
-                        "getRequest",
-                        "null",
-                        "none",
-                        "in_black",
-                        "black",
-                        "all_black"
-                      ]
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    "/account.edit": {
+    "/account/edit": {
       "post": {
         "tags": [
           "account"
@@ -397,8 +413,15 @@
                 "status": {
                   "type": "string",
                   "description": "User`s status"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
                 }
-              }
+              },
+              "required": [
+                "token"
+              ]
             }
           }
         ],
@@ -428,25 +451,26 @@
         }
       }
     },
-    "/blacklist.add": {
+    "/account/getRelations": {
       "get": {
         "tags": [
-          "blacklist"
+          "account"
         ],
-        "summary": "Add user to blacklist",
+        "summary": "Get relations about you and other user",
         "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "type": "integer",
+            "minimum": 1,
+            "description": "User`s id",
+            "required": true
+          },
           {
             "name": "token",
             "in": "query",
             "type": "string",
             "description": "User`s token",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "integer",
-            "description": "User`s id",
             "required": true
           }
         ],
@@ -465,8 +489,18 @@
                   "type": "object",
                   "properties": {
                     "response": {
-                      "type": "boolean",
-                      "description": "If true, user added to your blacklist"
+                      "type": "string",
+                      "description": "Status",
+                      "enum": [
+                        "friends",
+                        "sendRequest",
+                        "getRequest",
+                        "null",
+                        "none",
+                        "in_black",
+                        "black",
+                        "all_black"
+                      ]
                     }
                   }
                 }
@@ -476,26 +510,37 @@
         }
       }
     },
-    "/blacklist.delete": {
-      "get": {
+    "/account/login": {
+      "post": {
         "tags": [
-          "blacklist"
+          "account"
         ],
-        "summary": "Delete user to blacklist",
+        "summary": "Login user and get token with all permissions",
         "parameters": [
           {
-            "name": "token",
-            "in": "query",
-            "type": "string",
-            "description": "User`s token",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "integer",
-            "description": "User`s id",
-            "required": true
+            "in": "body",
+            "name": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "login": {
+                  "type": "string",
+                  "description": "User`s login"
+                },
+                "password": {
+                  "type": "string",
+                  "description": "User`s password encoded with servers public RSA key"
+                },
+                "remember": {
+                  "type": "boolean",
+                  "description": "If true, return unlimit token"
+                }
+              },
+              "required": [
+                "login",
+                "password"
+              ]
+            }
           }
         ],
         "produces": [
@@ -513,8 +558,9 @@
                   "type": "object",
                   "properties": {
                     "response": {
-                      "type": "boolean",
-                      "description": "If true, user deleted from your blacklist"
+                      "description": "User`s token",
+                      "type": "string",
+                      "default": "token"
                     }
                   }
                 }
@@ -524,7 +570,7 @@
         }
       }
     },
-    "/blacklist.get": {
+    "/blacklist": {
       "get": {
         "tags": [
           "blacklist"
@@ -569,26 +615,195 @@
         }
       }
     },
-    "/friends.add": {
+    "/blacklist/add": {
+      "post": {
+        "tags": [
+          "blacklist"
+        ],
+        "summary": "Add user to your blacklist",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "User`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "token",
+                "id"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, user added to your blacklist"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/blacklist/delete": {
+      "post": {
+        "tags": [
+          "blacklist"
+        ],
+        "summary": "Delete user from your blacklist",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "User`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "token",
+                "id"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, user deleted from your blacklist"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/friends{id}": {
       "get": {
         "tags": [
           "friends"
         ],
-        "summary": "Send friends request or add user to friends",
+        "summary": "Get ids who is your friends",
         "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "description": "User`s id",
+            "required": true
+          },
           {
             "name": "token",
             "in": "query",
             "type": "string",
             "description": "User`s token",
             "required": true
-          },
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "array",
+                      "description": "Ids of users who did add to your friends",
+                      "minItems": 0,
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/friends/add": {
+      "post": {
+        "tags": [
+          "friends"
+        ],
+        "summary": "Send friends request or add user to friends",
+        "parameters": [
           {
-            "name": "id",
-            "in": "query",
-            "type": "integer",
-            "description": "User`s id",
-            "required": true
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "User`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "id",
+                "token"
+              ]
+            }
           }
         ],
         "produces": [
@@ -617,26 +832,33 @@
         }
       }
     },
-    "/friends.delete": {
-      "get": {
+    "/friends/delete": {
+      "post": {
         "tags": [
           "friends"
         ],
         "summary": "Delete friend request or delete user from friends",
         "parameters": [
           {
-            "name": "token",
-            "in": "query",
-            "type": "string",
-            "description": "User`s token",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "integer",
-            "description": "User`s id",
-            "required": true
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "User`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "id",
+                "token"
+              ]
+            }
           }
         ],
         "produces": [
@@ -665,59 +887,7 @@
         }
       }
     },
-    "/friends.get": {
-      "get": {
-        "tags": [
-          "friends"
-        ],
-        "summary": "Get ids who is your friends",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "query",
-            "type": "string",
-            "description": "User`s token",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "string",
-            "description": "User`s id",
-            "required": false
-          }
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "Return data from server",
-            "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/ApiResponse"
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "response": {
-                      "type": "array",
-                      "description": "Ids of users who did add to your friends",
-                      "minItems": 0,
-                      "items": {
-                        "type": "number"
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    "/friends.getSendRequest": {
+    "/friends/getSendRequest": {
       "get": {
         "tags": [
           "friends"
@@ -762,7 +932,7 @@
         }
       }
     },
-    "/friends.getGetRequest": {
+    "/friends/getGetRequest": {
       "get": {
         "tags": [
           "friends"
@@ -807,7 +977,7 @@
         }
       }
     },
-    "/photos.add": {
+    "/photos/add": {
       "post": {
         "tags": [
           "photos"
@@ -870,7 +1040,7 @@
         }
       }
     },
-    "/photo.get": {
+    "/photo/get": {
       "get": {
         "tags": [
           "photos"
@@ -924,33 +1094,38 @@
         }
       }
     },
-    "/photo.setTarget": {
-      "get": {
+    "/photo/setTarget": {
+      "post": {
         "tags": [
           "photos"
         ],
         "summary": "Set photo`s target",
         "parameters": [
           {
-            "name": "token",
-            "in": "query",
-            "type": "string",
-            "description": "User`s token",
-            "required": true
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "type": "number",
-            "description": "Photo`s id",
-            "required": true
-          },
-          {
-            "name": "target",
-            "in": "query",
-            "type": "number",
-            "description": "WARNING: photo will set access for all users.\nPhoto targets:\n1 - User`s avatar",
-            "required": true
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "description": "Photo`s id"
+                },
+                "target": {
+                  "type": "number",
+                  "description": "WARNING: photo will set access for all users.\nPhoto targets:\n1 - User`s avatar"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "id",
+                "target",
+                "token"
+              ]
+            }
           }
         ],
         "produces": [
@@ -979,20 +1154,13 @@
         }
       }
     },
-    "/photo.getTarget": {
+    "/photo/getTarget": {
       "get": {
         "tags": [
           "photos"
         ],
         "summary": "Get photo`s target",
         "parameters": [
-          {
-            "name": "token",
-            "in": "query",
-            "type": "string",
-            "description": "User`s token",
-            "required": true
-          },
           {
             "name": "id",
             "in": "query",
@@ -1005,6 +1173,13 @@
             "in": "query",
             "type": "number",
             "description": "WARNING: photo will set access for all users.\nPhoto targets:\n1 - User`s avatar",
+            "required": true
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "type": "string",
+            "description": "User`s token",
             "required": true
           }
         ],
@@ -1024,6 +1199,7 @@
                   "properties": {
                     "response": {
                       "type": "number",
+                      "minimum": 1,
                       "description": "Photo`s id"
                     }
                   }
@@ -1033,10 +1209,663 @@
           }
         }
       }
+    },
+    "/messages/addToChat": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Return to the chat, if you leaved",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Peer`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "id",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, action success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/addUserToChat": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Add user to this chat if you are admin",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "User`s who will be in chat"
+                },
+                "peer_id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Peer`s id"
+                },
+                "admin": {
+                  "type": "boolean",
+                  "description": "If true user will be admin"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "user_id",
+                "peer_id",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, action success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/createChat": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Create chat for users",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Chat`s name"
+                },
+                "users_ids": {
+                  "type": "array",
+                  "description": "Ids of users",
+                  "items": {
+                    "type": "number",
+                    "minimum": 1
+                  }
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "name",
+                "users_ids",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "number",
+                      "description": "Peer`s id"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/deleteUserFromChat": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Delete user from chat",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "User`s id"
+                },
+                "peer_id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Peer`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "user_id",
+                "peer_id",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, action success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/getAllChat": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Get all chats of users",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Start of list",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "number",
+            "minimum": 1,
+            "default": 20,
+            "description": "Length of list",
+            "required": false
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "type": "string",
+            "description": "User`s token",
+            "required": true
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "peer_id": {
+                            "type": "number",
+                            "minimum": 1,
+                            "description": "Peer`s id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/getById": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Get message from user`s message`s id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "type": "number",
+            "minimum": 0,
+            "description": "Message`s id",
+            "required": true
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "type": "string",
+            "description": "User`s token",
+            "required": true
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "$ref": "#/definitions/Message"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/getByPeerMessageId": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Get message from peer`s message`s id",
+        "parameters": [
+          {
+            "name": "peer_id",
+            "in": "query",
+            "type": "number",
+            "minimum": 1,
+            "description": "Peer`s id",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "type": "number",
+            "minimum": 1,
+            "description": "Peer`s message`s id",
+            "required": true
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "type": "string",
+            "description": "User`s token",
+            "required": true
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "$ref": "#/definitions/Message"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/getPeerById": {
+      "get": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Get peer from id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "type": "number",
+            "minimum": 1,
+            "description": "Peer`s id",
+            "required": true
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "type": "string",
+            "description": "User`s token",
+            "required": true
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "$ref": "#/definitions/Peer"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/leaveFromChat": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Leave peer",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Peer`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "id",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, action success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/markAsRead": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Mark message to read",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "User`s message`s id"
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "id",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, action success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/messages/sendMessage": {
+      "post": {
+        "tags": [
+          "messages"
+        ],
+        "summary": "Send message to peer",
+        "parameters": [
+          {
+            "name": "",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "peer_id": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Peer`s id"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "Message`s text"
+                },
+                "reples": {
+                  "type": "array",
+                  "description": "Reples messages",
+                  "items": {
+                    "type": "number",
+                    "minimum": 1
+                  }
+                },
+                "photos": {
+                  "type": "array",
+                  "description": "Message`s photos` ids",
+                  "items": {
+                    "type": "number",
+                    "minimum": 1
+                  }
+                },
+                "token": {
+                  "type": "string",
+                  "description": "User`s token"
+                }
+              },
+              "required": [
+                "peer_id",
+                "text",
+                "token"
+              ]
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Return data from server",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ApiResponse"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "response": {
+                      "type": "boolean",
+                      "description": "If true, action success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
-  },
-  "externalDocs": {
-    "description": "Find out more about Swagger",
-    "url": "http://swagger.io"
   }
 }

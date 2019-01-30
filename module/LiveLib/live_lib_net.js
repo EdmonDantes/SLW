@@ -59,7 +59,7 @@ let live_lib_net = function (settings) {
     try {
       if (name) {
         function __tmp(req, res, next) {
-          if (req.query && req.query.crossDomenRequest) {
+          if (req.query && req.query.crossDomainRequest) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
@@ -74,9 +74,9 @@ let live_lib_net = function (settings) {
           });
         }
 
-        let sub_name = name.substr(0, name.lastIndexOf(":"));
         this.router.get(name, __tmp);
-        if (name !== sub_name) this.router.get(sub_name, __tmp);
+        let sub_name = name.substr(0, name.indexOf(":", name.lastIndexOf("/")));
+        if (sub_name && sub_name.length > 0 && name != sub_name) this.router.get(sub_name, __tmp);
         return true;
       }
     } catch (err) {
@@ -91,7 +91,7 @@ let live_lib_net = function (settings) {
       if (name) {
 
         function __tmp(req, res, next) {
-          if ((req.query && req.query.crossDomenRequest) || (req.body && req.body.crossDomenRequest)) {
+          if ((req.query && req.query.crossDomainRequest) || (req.body && req.body.crossDomainRequest)) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
@@ -108,9 +108,9 @@ let live_lib_net = function (settings) {
           });
         }
 
-        let sub_name = name.substr(0, name.lastIndexOf(":"));
         this.router.post(name, __tmp);
-        if (name !== sub_name) this.router.post(sub_name, __tmp);
+        let sub_name = name.substr(0, name.indexOf(":", name.lastIndexOf("/")));
+        if (sub_name && sub_name.length > 0 && name != sub_name) this.router.post(sub_name, __tmp);
         return true;
       }
     } catch (err) {
@@ -125,7 +125,7 @@ let live_lib_net = function (settings) {
       if (name) {
 
         function __tmp(req, res, next) {
-          if ((req.query && req.query.crossDomenRequest) || (req.body && req.body.crossDomenRequest)) {
+          if ((req.query && req.query.crossDomainRequest) || (req.body && req.body.crossDomainRequest)) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
           }
@@ -142,9 +142,9 @@ let live_lib_net = function (settings) {
           });
         }
 
-        let sub_name = name.substr(0, name.lastIndexOf(":"));
         this.router.put(name, __tmp);
-        if (name !== sub_name) this.router.put(sub_name, __tmp);
+        let sub_name = name.substr(0, name.indexOf(":", name.lastIndexOf("/")));
+        if (sub_name && sub_name.length > 0 && name != sub_name) this.router.put(sub_name, __tmp);
         return true;
       }
     } catch (err) {
