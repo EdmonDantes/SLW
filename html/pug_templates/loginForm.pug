@@ -16,7 +16,7 @@ html
                   if (err) callback(err);
                   else {
                     try {
-                      callback(undefined, new document.NodeRSA(res.response, "pkcs1-public-pem").encrypt(password, "base64"));
+                      callback(undefined, new document.NodeRSA(res.response, "pkcs1-public-pem").encrypt(value, "base64"));
                     } catch (err) {
                       callback(err);
                     }
