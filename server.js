@@ -93,7 +93,7 @@ getMethods["swagger"] = res => {
   res.res.sendFile(path.join(folder, "swagger.json"));
 };
 postMethods["post/join"] = (res, callback) => {
-  if (res.args.crossDomainRequest || res.req.get("Access-Control-Request-Method") || res.req.get("Access-Control-Request-Headers")) {
+  if (res.args && res.args.crossDomainRequest || res.res.req && (res.res.req.get("Access-Control-Request-Method") || res.res.req.get("Access-Control-Request-Headers"))) {
     callback(new error(404, "code404"));
   } else {
     if (res.token) {
@@ -289,7 +289,7 @@ function createPage(name, func) {
   server.get(name, (res) => {
     func(__getinput(res), (err0, res0) => {
       if (err0) {
-        if (err0 == 9) {
+        if (err0.code == 9) {
           res.res.cookie("token", "");
           res.res.header("Location", "/");
           res.res.sendStatus(303);

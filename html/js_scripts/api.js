@@ -6,7 +6,7 @@ Please email dantes2104@gmail.com if you would like permission to do something w
 Base = {};
 Base.domain = window.location.origin; //TODO: change to real domain (Example "vk.com")
 Base.lang = navigator.language || navigator.userLanguage;
-Base.sendAllErrors = true;
+Base.sendAllErrors = false;
 
 Base.url = function (str, ...args) {
   let tmp0 = str.split("://");

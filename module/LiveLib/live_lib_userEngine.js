@@ -53,9 +53,9 @@ let live_lib_userEngine = function (settings) {
           that.addLoaded();
         } else {
           that.key = base.createRandomString(255);
-          db.insert("servers", {ip: server_ip, key: that.key}, (err, res) => {
-            if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
-            else if (res) that.id = res.insertId;
+          db.insert("servers", {ip: server_ip, key: that.key}, (err0, res0) => {
+            if (err0) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+            else if (res0) that.id = res0[0].insertId;
             that.addLoaded();
           });
         }
