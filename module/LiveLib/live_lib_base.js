@@ -101,7 +101,7 @@ let _live_lib_base = function () {
       return -1;
     };
 
-    Array.prototype.____locationOf = function (element, array, start, end) {
+    Array.____locationOf = function (element, array, start, end) {
       start = start || 0;
       end = end || array.length;
       let pivot = parseInt(start + (end - start) / 2, 10);
@@ -117,7 +117,7 @@ let _live_lib_base = function () {
 
 
     Array.prototype.insertSort = function (data) {
-      this.splice(this.____locationOf(data, this) + 1, 0, data);
+      this.splice(Array.____locationOf(data, this) + 1, 0, data);
     };
 
     Array.fromSet = function (set) {
@@ -249,7 +249,7 @@ let _live_lib_base = function () {
       return false;
     };
 
-    function ___prout(...args) {
+    function ___console_out(...args) {
       (console._log ? console._log : console.log)(...args);
     }
 
@@ -259,55 +259,55 @@ let _live_lib_base = function () {
     });
 
     process.on("beforeExit", (...args) => {
-      ___prout("Before Exit %o", args);
+      ___console_out("Before Exit %o", args);
     });
 
     process.on("disconnect", (...args) => {
-      ___prout("disconnect %o", args);
+      ___console_out("disconnect %o", args);
     });
 
     process.on("message", (...args) => {
-      ___prout("message %o", args);
+      ___console_out("message %o", args);
     });
 
     process.on("multipleResolves", (...args) => {
-      ___prout("multipleResolves %o", args);
+      ___console_out("multipleResolves %o", args);
       process.exit(0);
     });
 
     process.on("rejectionHandled", (...args) => {
-      ___prout("rejectionHandled %o", args);
+      ___console_out("rejectionHandled %o", args);
       process.exit(0);
     });
 
     process.on("uncaughtException", (...args) => {
-      ___prout("uncaughtException %o", args[0]);
+      ___console_out("uncaughtException %o", args[0]);
       process.exit(0);
     });
 
     process.on("unhandledRejection", (...args) => {
-      ___prout("unhandledRejection %o", args);
+      ___console_out("unhandledRejection %o", args);
       process.exit(0);
     });
 
     process.on("warning", (...args) => {
-      ___prout("warning %o", args);
+      ___console_out("warning %o", args);
     });
 
     process.on("unhandledRejection", (...args) => {
-      ___prout("unhandledRejection %o", args);
+      ___console_out("unhandledRejection %o", args);
       process.exit(0);
     });
 
     //process.stdin.resume();
 
     process.on("SIGTERM", (...args) => {
-      ___prout(" SIGTERM", args);
+      ___console_out(" SIGTERM", args);
       process.exit(0);
     });
 
     process.on('SIGINT', () => {
-      ___prout("\nLiveLib stop work\nCTRL^C");
+      ___console_out("\nLiveLib stop work\nCTRL^C");
       process.exit(0);
     });
 

@@ -451,7 +451,7 @@ pages["edit"] = (res, callback) => {
 
 pages["user:id"] = (res) => {
   if (res.token) {
-    renderUserForm(res.res, res["__params"].id ? res["__params"].id : -1, res.token, res.lang);
+    renderUserForm(res.res, res.id ? res.id : -1, res.token, res.lang);
   } else {
     res.res.header("Location", "/");
     res.res.sendStatus(303);
