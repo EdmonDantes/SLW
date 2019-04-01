@@ -178,7 +178,7 @@ let _live_lib_permission = function () {
             if (tmp.value === global.LiveLib.permissions.PermissionsTree.ALL_STRING && !not) break;
             tmp = tmp.down(obj, true);
           }
-          tmp.is_negative = not ? true : false;
+          tmp.is_negative = !!not;
           tmp.is_perm = true;
 
           if (tmp.getValue() !== global.LiveLib.permissions.PermissionsTree.ALL_STRING) {

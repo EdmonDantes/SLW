@@ -12,6 +12,8 @@ let live_lib_userEngine = function (settings) {
     let fs = base.getLib("fs");
     let path = base.getLib("path");
     let nodeRSA = base.getLib("node-rsa");
+    let emitter = base.getLib("events");
+    let events = new emitter();
 
     const TOKEN_LENGTH = 240; // Длина токена
 
@@ -23,12 +25,14 @@ let live_lib_userEngine = function (settings) {
       let db = this.db = new Database(host, user, password, port, database, count_pools);
       this.status = 0;
       this.addLoaded = function () {
-        if (this.status > 3) {
+        if (this.status > 4) {
           if (callback) callback();
         }
         else this.status++;
       };
       this.folder = path.resolve(folder);
+
+      this.waiting_users = new Map();
 
 
       /*
@@ -69,12 +73,12 @@ let live_lib_userEngine = function (settings) {
         {name: "login", type: VARCHAR(80, false, "latin1"), unique: true, notnull: true}, // Логин для входа в профиль
         {name: "password", type: VARCHAR(60, true, "latin1"), notnull: true}, // Пароль в зашифрованном виде
         {name: "passwordSalt", type: VARCHAR(29, true, "latin1"), notnull: true}, // Соль пароля
-        //TODO: create support in server.js {name: "screen_name", type: VARCHAR(120, true, "latin1"), notnull: true, default: "''"}, // Ссылка на профиль
         {name: "status", type: VARCHAR(500, true, "utf8mb4"), notnull: true, default: "''"}, // Статус на станице
         {name: "closed", type: BIT(1), notnull: true, default: "b'0'"}, // Закрытый ли аккаунт
         {name: "banned", type: BIT(1), notnull: true, default: "b'0'"}, // Забанена ли страница
         {name: "deleted", type: BIT(1), notnull: true, default: "b'0'"}, // Удалена ли страница
         {name: "is_admin", type: BIT(1), notnull: true, default: "b'0'"}, // Является ли пользователь админом
+        {name: "messageNoFriends", type: BIT(1), notnull: true, default: "b'1'"}, // Могут ли пользователю писать не друзья
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -95,7 +99,13 @@ let live_lib_userEngine = function (settings) {
        */
       db.createTable("cards",
         {name: "id", type: BIGINT(), autoincrement: true, primary: true},
-        {name: "type_card_id", type: UTINYINT(), notnull: true, unique: ["id"]},
+        {
+          name: "type_card_id",
+          type: UTINYINT(),
+          notnull: true,
+          foreign: {table: "types_cards", key: "id"},
+          unique: ["id"]
+        },
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -130,8 +140,8 @@ let live_lib_userEngine = function (settings) {
        */
       db.createTable("relations",
         {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id отношений
-        {name: "user_id_1", type: UINT(), notnull: true}, // Первый пользователь (Всегда должен быть меньше второго)
-        {name: "user_id_2", type: UINT(), notnull: true, unique: ["user_id_1"]}, //Второй пользователь (Всегда должен быть больше первого)
+        {name: "user_id_1", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Первый пользователь (Всегда должен быть меньше второго)
+        {name: "user_id_2", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}, unique: ["user_id_1"]}, //Второй пользователь (Всегда должен быть больше первого)
         {name: "status", type: BIT(3), notnull: true, default: "b'011'"}, // Модификатор отношений
         // 0 - друзья
         // 1 - user_id_1 отправил запрос на дружбу
@@ -166,9 +176,10 @@ let live_lib_userEngine = function (settings) {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
-      db.createTable("actions",
+      db.createTable("all_actions",
         {name: "id", type: BIGINT(), primary: true, notnull: true, autoincrement: true}, // Id действия
         {name: "token_id", type: UINT(), notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Id пользоваетеля
         {name: "type_action", type: USMALLINT(), notnull: true}, // Вид действия
         {name: "time", type: UINT(), notnull: true}, // Время совершения действия
         {name: "success", type: BIT(), notnull: true, default: "b'0'"}, // Удачно ли действие завершено
@@ -176,9 +187,22 @@ let live_lib_userEngine = function (settings) {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
 
+      db.createTable("users_actions",
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}},
+        {name: "user_action_id", type: BIGINT(), notnull: true, unique: ["user_id"]},
+        {name: "action", type: VARCHAR(500), notnull: true},
+        err => {
+          if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
+          else db.createRequest("CREATE TRIGGER `auto_increment_user_action_id` BEFORE INSERT ON `users_actions` FOR EACH ROW SET NEW.user_action_id = (SELECT COUNT(`user_id`) + 1 FROM `users_actions` WHERE `user_id` = NEW.user_id);", err => {
+            if (err) global.LiveLib.getLogger().debugm("User Engine", "[[constructor]] => ", err);
+            that.addLoaded();
+          });
+        });
+
       db.createTable("connections",
         {name: "id", type: UINT(), primary: true, notnull: true, autoincrement: true}, // Id подключения
-        {name: "token_id", type: UINT(), unique: true, notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
+        {name: "user_id", type: UINT(), notnull: true, foreign: {table: "users", key: "id"}}, // Id пользователя
+        {name: "token_id", type: UINT(), unique: ["user_id"], notnull: true, foreign: {table: "tokens", key: "id"}}, // Id токена
         {name: "server_id", type: UTINYINT(), notnull: true, foreign: {table: "servers", key: "id"}}, // Id сервера
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
@@ -189,6 +213,7 @@ let live_lib_userEngine = function (settings) {
         {name: "name", type: VARCHAR(120, true, "utf8mb4"), notnull: true}, // Название чата
         {name: "photo_id", type: BIGINT(), foreign: {table: "photos", key: "id"}, default: "NULL"}, // Id фотографии (0 - нет фотографии)
         {name: "create_date", type: UINT(), notnull: true}, // Время создания чата в секундах
+        {name: "isDialog", type: BIT(), notnull: true, default: "b'0'"}, // Является ли чат диалогом
         err => {
           if (err) global.LiveLib.getLogger().errorm("User Engine", "[[constructor]] => ", err);
         });
@@ -312,7 +337,6 @@ let live_lib_userEngine = function (settings) {
 
     let types_actions = [
       "account.get",
-      "account.getAvatar",
       "account.statusWith",
       "account.edit",
 
@@ -323,6 +347,7 @@ let live_lib_userEngine = function (settings) {
       "friends.add",
       "friends.delete",
       "friends.get",
+      "friends.getRequests",
       "friends.getSendRequest",
       "friends.getGetRequest",
 
@@ -342,7 +367,10 @@ let live_lib_userEngine = function (settings) {
       "messages.getById",
       "messages.getByPeerMessageId",
       "messages.markAsRead",
-      "messages.sendMessage"
+      "messages.sendMessage",
+
+      "actions.get",
+      "actions.getUpdate",
     ];
 
     function getActionId(action) {
@@ -354,7 +382,8 @@ let live_lib_userEngine = function (settings) {
       "blacklist",
       "friends",
       "photos",
-      "messages"
+      "messages",
+      "actions"
     ];
 
     function getPermissionId(permission) {
@@ -511,8 +540,9 @@ let live_lib_userEngine = function (settings) {
                 else if (res0[0].deleted[0]) handler(new error(7, "users.deleted"));
                 else {
                   function end(result) {
-                    that.db.insert("actions", {
+                    that.db.insert("all_actions", {
                       token_id: res.id,
+                      user_id: res.user_id,
                       type_action: getActionId(action_str),
                       time: time ? time : Math.floor(Date.now() / 1000),
                       success: !!result
@@ -608,7 +638,13 @@ let live_lib_userEngine = function (settings) {
             } else if (res[0].banned[0]) {
               callback(new error(6, "users.banned"));
             } else {
-              callback(undefined, res[0]);
+              that.db.select("tokens", {where: ["`user_id` = '", user_id, "'"]}, (err0, res0) => {
+                if (err0) callback(error.serv(err));
+                else {
+                  res[0].last_online = res0[0].last_using;
+                  callback(undefined, res[0]);
+                }
+              });
             }
           } else callback(new error(8, "users.not.find"));
         });
@@ -627,7 +663,9 @@ let live_lib_userEngine = function (settings) {
             status: res.status,
             closed: !!res.closed[0],
             banned: !!res.banned[0],
-            deleted: !!res.deleted[0]
+            deleted: !!res.deleted[0],
+            last_online: res.last_online,
+            messageNoFriends: !!res.messageNoFriends[0]
           });
         }
       });
@@ -665,6 +703,9 @@ let live_lib_userEngine = function (settings) {
                     else res0.canDeleteFromBlack = true;
                     if (res !== "friend" && res !== "sendRequest") res0.canAddToFriend = res !== "black";
                     else res0.canDeleteFromFriend = true;
+                    if (res0.messageNoFriends) res0.canSendMessage = res === "friends";
+                    else res0.canSendMessage = true;
+                    res0.messageNoFriends = undefined;
 
                     callback(undefined, res0);
                     end(true);
@@ -687,16 +728,13 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
-    function __func010(string, length = 1) {
-      return string && string.length > length;
-    }
-
     users.prototype.accountEdit = function (input, token, callback) {
       this.createAction(token, "account.edit", "account", callback, (user, end, that) => {
         that.db.update("users",
           {
             closed: input.closed ? 1 : 0,
             status: input.status,
+            messagesNoFriends: input.messageFromNotFriends ? 1 : 0,
             "$$where": "id = " + user.id
           },
           err => {
@@ -956,6 +994,10 @@ let live_lib_userEngine = function (settings) {
         });
       });
     };
+
+    /*users.prototype.firendsGetRequests = function(offset, count, out, token, callback) {
+
+    };*/
 
     users.prototype.friendsGetSendRequest = function (token, callback) {
       this.createAction(token, "friends.getSendRequest", "friends", callback, (user, end, that) => {
@@ -1350,7 +1392,7 @@ let live_lib_userEngine = function (settings) {
       });
     };
 
-    function __func012(user_id, peer_id, that, callback) { // Get object `users_peers` in database
+    function __func006(user_id, peer_id, that, callback) { // Get object `users_peers` in database
       that.db.select("users_peers", {where: "user_id = " + user_id + " AND peer_id = " + peer_id}, (err, res) => {
         if (err) callback(error.serv(err));
         else {
@@ -1359,7 +1401,7 @@ let live_lib_userEngine = function (settings) {
       });
     }
 
-    function __func013(name, photo_id, that, callback) { // Create object `peers` in database
+    function __func007(name, photo_id, that, callback) { // Create object `peers` in database
       if (name) {
         that.db.insert("peers", {
           name: name,
@@ -1375,7 +1417,7 @@ let live_lib_userEngine = function (settings) {
       } else callback(new error(20, "users.wrong.data"));
     }
 
-    function __func014(text, owner, type, that, callback) { // Create object `messages` in database
+    function __func008(text, owner, type, that, callback) { // Create object `messages` in database
       if (text && owner) {
         that.db.insert("messages", {
           text: text,
@@ -1391,7 +1433,7 @@ let live_lib_userEngine = function (settings) {
       } else callback(new error(20, "users.wrong.data"));
     }
 
-    function __func015(user_id, peer_id, is_admin = false, that, callback) { // Adding peer to users peers in database
+    function __func009(user_id, peer_id, is_admin = false, that, callback) { // Adding peer to users peers in database
       if (user_id && peer_id) {
         that.db.insert("users_peers", {user_id: user_id, peer_id: peer_id, is_admin: !!is_admin}, (err) => {
           if (err) {
@@ -1402,7 +1444,7 @@ let live_lib_userEngine = function (settings) {
       } else callback(new error(20, "users.wrong.data"));
     }
 
-    function __func016(peer_id, message_id, that, callback) { // Send message to peers (peers_messages)
+    function __func010(peer_id, message_id, that, callback) { // Send message to peers (peers_messages)
       if (peer_id && message_id) {
         that.db.insert("peers_messages", {peer_id: peer_id, message_id: message_id}, (err) => {
           if (err) callback(error.serv(err));
@@ -1411,7 +1453,7 @@ let live_lib_userEngine = function (settings) {
       } else callback(new error(20, "users.wrong.data"));
     }
 
-    function __func017(user_id, message_id, type = 0, that, callback) { // Send message to user (users_messages)
+    function __func011(user_id, message_id, type = 0, that, callback) { // Send message to user (users_messages)
       if (user_id && message_id) {
         that.db.insert("users_messages", {user_id: user_id, message_id: message_id, type: type}, (err) => {
           if (err) callback(error.serv(err));
@@ -1420,9 +1462,9 @@ let live_lib_userEngine = function (settings) {
       } else callback(new error(20, "users.wrong.data"));
     }
 
-    function __func018(peer_id, message_id, owner, that, callback) { // Send message to all in peer
+    function __func012(peer_id, message_id, owner, that, callback) { // Send message to all in peer
       if (peer_id && message_id && owner) {
-        __func016(peer_id, message_id, that, (err) => {
+        __func010(peer_id, message_id, that, (err) => {
           if (err) callback(err);
           else that.db.select("users_peers", {where: ["peer_id = ", peer_id, " AND `leaved` = b'0' AND `banned` = b'0'"]}, (err0, res0) => {
             if (err0) callback(error.serv(err0));
@@ -1431,12 +1473,12 @@ let live_lib_userEngine = function (settings) {
               for (let obj of res0) {
                 promises.push(new Promise((res, rej) => {
                   if (obj.user_id != owner) {
-                    __func017(obj.user_id, message_id, 0, that, (err) => {
+                    __func011(obj.user_id, message_id, 0, that, (err) => {
                       if (err) rej(err);
                       else res();
                     });
                   } else {
-                    __func017(obj.user_id, message_id, 1, that, (err) => {
+                    __func011(obj.user_id, message_id, 1, that, (err) => {
                       if (err) rej(err);
                       else res();
                     });
@@ -1450,7 +1492,7 @@ let live_lib_userEngine = function (settings) {
       } else callback(new error(20, "users.wrong.data"));
     }
 
-    function __func019(message_id, that, callback, reply = 0) { // Get message
+    function __func013(message_id, that, callback, reply = 0) { // Get message
       if (reply > 50) callback();
       that.db.select("messages", {where: ["`id` = '", message_id, "'"]}, (err, res) => {
         if (err) callback(error.serv(err));
@@ -1478,7 +1520,7 @@ let live_lib_userEngine = function (settings) {
                       let reply_messages = [];
                       for (let obj of res1) {
                         promises.push(new Promise((res3, rej3) => {
-                          __func019(obj.reply_id, that, (err4, res4) => {
+                          __func013(obj.reply_id, that, (err4, res4) => {
                             if (err4) rej3(err4);
                             else {
                               if (res4) reply_messages.push(res4);
@@ -1535,7 +1577,7 @@ let live_lib_userEngine = function (settings) {
             end(all);
           }
           else {
-            __func013(name, null, that, (err0, res0) => {
+            __func007(name, null, that, (err0, res0) => {
               if (err0) {
                 callback(err0);
                 end(!err0);
@@ -1543,7 +1585,7 @@ let live_lib_userEngine = function (settings) {
               else {
                 let promises0 = [];
                 promises0.push(new Promise((res, rej) => {
-                  __func015(user.id, res0, true, that, (err1) => {
+                  __func009(user.id, res0, true, that, (err1) => {
                     if (err1) rej(err1);
                     else res();
                   });
@@ -1558,12 +1600,12 @@ let live_lib_userEngine = function (settings) {
                   }));
                 }
                 Promise.all(promises0).then(res => {
-                  __func014(name, user.id, 1, that, (err1, res1) => {
+                  __func008(name, user.id, 1, that, (err1, res1) => {
                     if (err1) {
                       callback(err1);
                       end(false);
                     } else
-                      __func018(res0, res1, user.id, that, (err2) => {
+                      __func012(res0, res1, user.id, that, (err2) => {
                         if (err2) callback(err2);
                         else callback(undefined, res1);
                         end(!err2);
@@ -1582,7 +1624,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.messagesAddUserToChat = function (user_id, peer_id, is_admin, token, callback) {
       this.createAction(token, "messages.addUserToChar", "messages", callback, (user, end, that) => {
-        __func012(user.id, peer_id, that, (err0, res0) => {
+        __func006(user.id, peer_id, that, (err0, res0) => {
           if (err0) {
             callback(err0);
             end(false);
@@ -1602,22 +1644,22 @@ let live_lib_userEngine = function (settings) {
                 callback(new error(31, "messages.wrong.user"));
                 end(false);
               } else {
-                __func012(user_id, peer_id, that, (err2, res2) => {
+                __func006(user_id, peer_id, that, (err2, res2) => {
                   if (err2) {
                     callback(err2);
                     end(false);
                   } else if (!res2) {
-                    __func015(user_id, peer_id, false, that, (err3) => {
+                    __func009(user_id, peer_id, false, that, (err3) => {
                       if (err3) {
                         callback(err3);
                         end(false);
                       } else {
-                        __func014(user_id, user.id, 2, that, (err4, res4) => {
+                        __func008(user_id, user.id, 2, that, (err4, res4) => {
                           if (err4) {
                             callback(err4);
                             end(false);
                           } else {
-                            __func018(peer_id, res4.insertId, user.id, that, callback);
+                            __func012(peer_id, res4.insertId, user.id, that, callback);
                           }
                         });
                       }
@@ -1651,7 +1693,7 @@ let live_lib_userEngine = function (settings) {
     users.prototype.messagesDeleteUserFromChat = function (user_id, peer_id, token, callback) {
       this.createAction(token, "messages.deleteUserFromChat", "messages", callback, (user, end, that) => {
         if (user.id == user_id) callback(new error(10, "users.can.not.status.self"));
-        else __func012(user.id, peer_id, that, (err0, res0) => {
+        else __func006(user.id, peer_id, that, (err0, res0) => {
           if (err0) {
             callback(err0);
             end(false);
@@ -1662,7 +1704,7 @@ let live_lib_userEngine = function (settings) {
             callback(new error(33, "messages.you.not.admin"));
             end(false);
           } else {
-            __func012(user_id, peer_id, that, (err1, res1) => {
+            __func006(user_id, peer_id, that, (err1, res1) => {
               if (err1) {
                 callback(err1);
                 end(false);
@@ -1697,7 +1739,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.messagesAddToChat = function (peer_id, token, callback) {
       this.createAction(token, "messages.addToChat", "messages", callback, (user, end, that) => {
-        __func012(user.id, peer_id, that, (err0, res0) => {
+        __func006(user.id, peer_id, that, (err0, res0) => {
           if (err0) {
             callback(err0);
             end(false);
@@ -1737,7 +1779,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.messagesGetChatById = function (peer_id, token, callback) {
       this.createAction(token, "messages.getChatById", "messages", callback, (user, end, that) => {
-        __func012(user.id, peer_id, that, (err, res) => {
+        __func006(user.id, peer_id, that, (err, res) => {
           if (err) {
             callback(err);
             end(false);
@@ -1808,7 +1850,7 @@ let live_lib_userEngine = function (settings) {
             callback(error.serv(err));
             end(false);
           } else {
-            __func019(res[0].message_id, that, (err0, res0) => {
+            __func013(res[0].message_id, that, (err0, res0) => {
               if (err0)
                 callback(err0);
               else {
@@ -1832,7 +1874,7 @@ let live_lib_userEngine = function (settings) {
             callback(error.serv(err));
             end(false);
           } else {
-            __func019(res[0].message_id, that, (err0, res0) => {
+            __func013(res[0].message_id, that, (err0, res0) => {
               if (err0) {
                 callback(err0);
                 end(false);
@@ -1855,7 +1897,7 @@ let live_lib_userEngine = function (settings) {
 
     users.prototype.messagesSendMessage = function (peer_id, text, reply_ids, photo_ids, token, callback) {
       this.createAction(token, "messages.sendMessage", "messages", callback, (user, end, that) => {
-        __func014(text, user.id, 0, that, (err, res) => {
+        __func008(text, user.id, 0, that, (err, res) => {
           if (err) {
             callback(err);
             end(false);
@@ -1884,7 +1926,7 @@ let live_lib_userEngine = function (settings) {
             }
 
             Promise.all(promises).then(res0 => {
-              __func018(peer_id, res, user.id, that, (err1, res1) => {
+              __func012(peer_id, res, user.id, that, (err1, res1) => {
                 if (err1) callback(err1);
                 else callback();
                 end(!err1);
@@ -1925,6 +1967,25 @@ let live_lib_userEngine = function (settings) {
             });
           } else callback();
         });
+      });
+    };
+
+    function __func014(string) {
+
+    }
+
+    users.prototype.getUserActions = function (start_action_id, token, callback) {
+      let that = this;
+      this.validToken(token, (err, res) => {
+        if (err) callback(err);
+        else {
+          that.db.select("users_actions", {where: ["`user_id` = '", res.user_id, "' AND `user_action_id` > '", start_action_id, "'"]}, (err0, res0) => {
+            if (err0 || res0 === undefined || res0 === null) callback(err0 ? error.serv(err0) : {});
+            else if (res0.length > 0) {
+              callback(res0);
+            }
+          });
+        }
       });
     };
 

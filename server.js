@@ -12,11 +12,13 @@ let url = LiveLib.base.getLib("url");
 let request = LiveLib.base.getLib("request");
 let path = LiveLib.base.getLib("path");
 let fs = LiveLib.base.getLib("fs");
+let express = LiveLib.base.getLib("express");
 
 let port = pref.get("serverPort", "8080");
 let ip = "http://" + LiveLib.net.getLocalServerIP() + ":" + port;
 let domain = pref.get("domain", ip);
 let folder = path.resolve("./html");
+
 
 let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("user"), pref.get("password"), pref.get("database"), pref.get("photo_folder"), folder, undefined, undefined, () => {
   server.start();
@@ -24,9 +26,12 @@ let users = new LiveLib.userEngine(ip, pref.get("host", "localhost"), pref.get("
 
 LiveLib.base.createIfNotExists(folder);
 
-server.get("/favicon.ico", (res) => {
+server.get("/favicon*.ico", (res) => {
   fs.createReadStream(path.join(folder, "images", "page_icon.png")).pipe(res.res);
 });
+
+//server.app.use(express.static(path.join(folder, "swagger-ui-dist")));
+
 //----------------------------GET methods <domain>/[lang]/api/<method>--------------------------\\
 let getMethods = {};
 getMethods[""] = (res, callback) => {
@@ -457,7 +462,6 @@ pages["user:id"] = (res) => {
     res.res.sendStatus(303);
   }
 };
-
 
 server.get("/swagger/:file", (res) => {
   if (res.req.params.file) {
